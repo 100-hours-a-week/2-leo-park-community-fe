@@ -1,0 +1,42 @@
+<!-- /src/views/login.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인</title>
+    <link rel="stylesheet" href="/frontend/public/css/styles.css"> <!-- 절대경로!! -->
+</head>
+<body>
+    <div id="app"></div> <!-- 로그인 페이지 렌더링 시작 -->
+    <div class="base-header">
+        <h1>아무 말 대잔치</h1>
+        <hr>
+    </div>
+    <div class="container">
+        <div class="form-title">로그인</div>
+        <div class="login-form">
+            <div class="label-container">
+                <label for="loginUsername" class="login-label">이메일</label>
+            </div>
+            <input type="text" id="loginUsername" placeholder="이메일을 입력하세요" autocomplete="username" />
+            <div id="emailError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-form">
+            <div class="label-container">
+                <label for="loginPassword" class="login-label">비밀번호</label>
+            </div>
+            <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요" autocomplete="current-password" />
+            <div id="passwordError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-button-container">
+            <button class="login-button" id="loginButton">로그인</button>
+            <button class="login-button secondary" id="registerButton">회원가입</button>
+        </div>
+    </div>
+
+    <!-- login.js를 script로 연결 -->
+    <!-- 절대경로!! -->
+    <script src="/frontend/src/js/login.js"></script>
+</body>
+</html>

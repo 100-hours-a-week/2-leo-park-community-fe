@@ -1,6 +1,5 @@
 // Base64 문자열을 파일로 저장하는 유틸리티 함수
 
-
 const path = require('path');
 const fs = require('fs');
 
@@ -15,15 +14,23 @@ function saveBase64Image(base64Image, filename) {
     const imageBuffer = Buffer.from(matches[2], 'base64');
 
     // 파일 저장 경로 설정
-    const imagePath = path.join(__dirname, '..', '..', 'frontend', 'public', 'images', filename);
+    const imagePath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'frontend',
+        'public',
+        'images',
+        filename,
+    );
 
     // 파일 저장
     fs.writeFileSync(imagePath, imageBuffer);
 
     // 이미지 URL 반환
-    // server.js에서 정적 파일을 받기 위한 app.use를 /public으로 지정해놨기 때문에 반드시반드시반드시 /public으로 요청이 들어가도록 해야 
+    // server.js에서 정적 파일을 받기 위한 app.use를 /public으로 지정해놨기 때문에 반드시반드시반드시 /public으로 요청이 들어가도록 해야
     // 백엔드 서버에서 올바르게 이미지를 찾아서 프론트엔드 서버에 전달해줌(이거 해결하는데 2시간 걸림)
     return `/public/images/${filename}`;
-}   
+}
 
 module.exports = { saveBase64Image };

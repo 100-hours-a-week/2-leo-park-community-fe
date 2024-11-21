@@ -4,10 +4,10 @@
   "description": "nodejs test",
   "main": "test1.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint:fix:format": "npm run lint:fix && npm run format"
   },
   "keywords": [
     "node",
@@ -16,14 +16,12 @@
   "author": "leo",
   "license": "ISC",
   "dependencies": {
-    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/eslintrc": "^3.2.0",
     "bcrypt": "^5.1.1",
     "connect-timeout": "^1.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-plugin-prettier": "^5.2.1",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
@@ -38,7 +36,12 @@
   },
   "devDependencies": {
     "eslint": "^8.57.1",
+    "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
     "prettier": "^3.3.3"
   }
 }

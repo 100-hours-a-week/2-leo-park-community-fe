@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="author" content="leo.park" />
+    <title>아무말 대잔치</title>
+    <style>
+        /* 전체 스타일 */
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #fff
+        }
+
+        body {
+            background-color: #f5f6f7;
+            line-height: 1.6;
+        }
+
+        /* 컨테이너 스타일 */
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 사용자 입력 폼 스타일 */
+        .form-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* 버튼 스타일 */
+        button {
+            padding: 12px 24px;
+            background-color: #ACA0EB;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #7F6AEE;
+        }
+
+        button.secondary {
+            background-color: #6c757d;
+        }
+
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+
+
+
+        /* 게시글 목록 스타일 */
+        .posts-container {
+            margin-top: 20px;
+        }
+
+        .post-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: white;
+        }
+
+        .post-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .post-meta {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        /* 헤더 스타일 */
+        /* 헤더 스타일 */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .header-listTemplate {
+            word-break: keep-all;
+            width: 100%;
+        }
+
+        .title {
+            color: #333;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        /* 상세 페이지 스타일 */
+        #postDetailPage .post-content {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+
+
+        /* 네비게이션 바 스타일 */
+        .navigation {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* 댓글 섹션 스타일 */
+        .comments-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+        }
+
+        .comments-section h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .comment-item {
+            padding: 1rem;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            background-color: #f8f9fa;
+        }
+
+        .comment-content {
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 버튼 변형 */
+        button.danger {
+            background-color: #dc3545;
+        }
+
+        button.danger:hover {
+            background-color: #c82333;
+        }
+
+        button.small {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+
+        .button-listTemplate {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            width: 100%;
+            clear: both;
+        }
+
+
+        /* 폼 레이블 스타일 */
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        /* 프로필 페이지 스타일 */
+        .profile-info {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        /* 게시글 액션 버튼 */
+        .post-actions {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        /* 게시판 반응 버튼(좋아요, 댓글, 조회) */
+        .post-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .post-stats button {
+            background-color: #4CAF50;
+            /* 버튼 색상 */
+            color: white;
+            /* 글자 색상 */
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .post-stats button:hover {
+            background-color: #45a049;
+            /* 버튼 hover 시 색상 */
+        }
+
+
+        /* 반응형 디자인 보완 */
+        @media (max-width: 768px) {
+            .nav-items {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .comment-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header button {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script>
+        // utils.js
+
+        // app.js
+        class Store {
+            constructor() {
+                this.state = {
+                    currentPage: 'login',
+                    isLoggedIn: false,
+                    currentUser: null,
+                    posts: [
+                        {
+                            id: 1,
+                            title: '아무말 대잔치 게시판의 게시글입니다.',
+                            content: '환영합니다!',
+                            author: '관리자',
+                            date: '2024-10-30 14:52:23',
+                            comments: [
+                                { id: 1, content: '아무말 대잔치 게시판의 댓글입니다.', author: '관리자', date: '2024-10-30 14:52:23' }
+                            ]
+                        }
+                    ],
+                    selectedPost: null,
+                    users: [
+                        {
+                            username: 'admin',
+                            password: '1234',
+                            nickname: '관리자',
+                            email: 'admin@example.com',
+                            joinDate: '2024-10-30 14:52:23'
+                        }
+                    ],
+                    editMode: false
+                };
+            }
+
+            // 기존 메서드들...
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                this.render();
+            }
+
+            render() {
+                const app = document.getElementById('app');
+                app.innerHTML = this.getPage();
+            }
+
+            getState() {
+                return this.state;
+            }
+
+
+
+            login() {
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+
+                const user = this.state.users.find(u =>
+                    u.username === username && u.password === password
+                );
+
+                if (user) {
+                    this.setState({
+                        isLoggedIn: true,
+                        currentUser: user,
+                        currentPage: 'list'
+                    });
+                } else {
+                    alert('아이디 또는 비밀번호가 잘못되었습니다.');
+                }
+            }
+
+            register() {
+                const username = document.getElementById('registerUsername').value.trim(); // 이메일
+                const password = document.getElementById('registerPassword').value; // 비밀번호
+                const passwordAgain = document.getElementById('registerPasswordagain').value; // 비밀번호 확인
+                const nickname = document.getElementById('registerNickname').value.trim(); // 닉네임
+
+                // 이메일 유효성 검사
+                if (!username) {
+                    alert('*이메일을 입력해주세요.');
+                    return;
+                }
+
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (username.length < 5 || !emailPattern.test(username)) {
+                    alert('*올바른 이메일 주소 형식을 입력해주세요(예: example@example.com)');
+                    return;
+                }
+
+                // 중복 이메일 확인
+                if (this.state.users.some(u => u.username === username)) {
+                    alert('*중복된 이메일입니다.');
+                    return;
+                }
+
+                // 비밀번호 유효성 검사
+                if (!password) {
+                    alert('*비밀번호를 입력해주세요.');
+                    return;
+                }
+
+                const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/;
+                if (!passwordPattern.test(password)) {
+                    alert('*비밀번호는 8자 이상, 20자 이하이며, 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야합니다.');
+                    return;
+                }
+
+                if (!passwordAgain) {
+                    alert('*비밀번호를 한번 더 입력해주세요.');
+                    return;
+                }
+
+                if (password !== passwordAgain) {
+                    alert('*비밀번호가 다릅니다.');
+                    return;
+                }
+
+                // 닉네임 유효성 검사
+                if (!nickname) {
+                    alert('*닉네임을 입력해주세요.');
+                    return;
+                }
+
+                if (nickname.length > 10) {
+                    alert('*닉네임은 최대 10자까지 작성가능합니다.');
+                    return;
+                }
+
+                if (/\s/.test(nickname)) {
+                    alert('*띄어쓰기를 없애주세요.');
+                    return;
+                }
+
+                if (this.state.users.some(u => u.nickname === nickname)) {
+                    alert('*중복된 닉네임입니다.');
+                    return;
+                }
+
+                // 새 사용자 추가
+                const newUser = { username, password, nickname };
+                this.setState({
+                    users: [...this.state.users, newUser],
+                    currentPage: 'login'
+                });
+                alert('회원가입이 완료되었습니다.');
+            }
+
+            logout() {
+                this.setState({
+                    isLoggedIn: false,
+                    currentUser: null,
+                    currentPage: 'login'
+                });
+            }
+
+            viewPost(id) {
+                const post = this.state.posts.find(p => p.id === id);
+                if (post) {
+                    this.setState({
+                        selectedPost: post,
+                        currentPage: 'detail'
+                    });
+                }
+            }
+
+            savePost() {
+                const title = document.getElementById('postTitle').value;
+                const content = document.getElementById('postContent').value;
+
+                if (!title || !content) {
+                    alert('제목과 내용을 모두 입력해주세요.');
+                    return;
+                }
+
+                const newPost = {
+                    id: this.state.posts.length + 1,
+                    title,
+                    content,
+                    author: this.state.currentUser.nickname,
+                    // date: new Date().toISOString().replace('T', ' ').slice(0, 19)
+                    date: new Date().toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    })
+                };
+
+                this.setState({
+                    posts: [...this.state.posts, newPost],
+                    currentPage: 'list'
+                });
+            }
+
+            getPage() {
+                switch (this.state.currentPage) {
+                    case 'login':
+                        return this.loginTemplate();
+                    case 'register':
+                        return this.registerTemplate();
+                    case 'list':
+                        return this.listTemplate();
+                    case 'detail':
+                        return this.detailTemplate();
+                    case 'write':
+                        return this.writeTemplate();
+                    case 'profile':
+                        return this.profileTemplate();
+                    case 'edit':
+                        return this.editTemplate();
+                    default:
+                        return this.loginTemplate();
+                }
+            }
+
+            loginTemplate() {
+                return `
+            <div class="container">
+                <h2 class="form-title">로그인</h2>
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="이메일" autocomplete="username" />
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="비밀번호" autocomplete="current-password" />
+                </div>
+                <div style="text-align: center;">
+                    <button onclick="store.login()">로그인</button>
+                    <button class="secondary" onclick="store.setState({ currentPage: 'register' })">회원가입</button>
+                </div>
+            </div>
+        `;
+            }
+
+            registerTemplate() {
+                return `
+            <div class="container">
+                <h2 class="form-title">회원가입</h2>
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="이메일" />
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="비밀번호" />
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPasswordagain" placeholder="비밀번호 확인" />
+                </div>
+                <div class="form-group">
+                    <input type="text" id="registerNickname" placeholder="닉네임" />
+                </div>
+                <div style="text-align: center;">
+                    <button onclick="store.register()">회원가입</button>
+                    <button class="secondary" onclick="store.setState({ currentPage: 'login' })">로그인하러 가기</button>
+                </div>
+            </div>
+        `;
+            }
+
+            listTemplate() {
+                const { posts } = this.state;
+                return `
+            <div class="container">
+                <div id="postListPage" class="active">
+                    <div class="header-listTemplate">
+                        <h2 class="title">안녕하세요 아무말 대잔치 게시판입니다</h2>
+                        <div class="button-listTemplate">
+                            <button onclick="store.setState({ currentPage: 'write' })">게시글 작성</button>
+                            <button onclick="store.setState({ currentPage: 'profile' })">프로필 관리</button>
+                            <button class="secondary" onclick="store.logout()">로그아웃</button>
+                        </div>
+                    </div>
+                    <div class="posts-container">
+                        ${posts.map(post => `
+                            <div class="post-item" onclick="store.viewPost(${post.id})">
+                                <h3>${post.title}</h3>
+                                <div class="post-meta">
+                                    <span>작성자: ${post.author}</span>
+                                    <span>작성일: ${post.date}</span>
+                                    <span>좋아요: ${post.likes || '0'}</span>
+                                    <span>댓글수: ${post.commentsCount || '0'}</span>
+                                    <span>조회수: ${post.views || '0'}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            // 회원정보 페이지 템플릿
+            profileTemplate() {
+                const { currentUser } = this.state;
+                return `
+            <div class="container">
+                <div class="header">
+                    <h2 class="title">회원정보수정</h2>
+                </div>
+                <div class="form-group">
+                    <label>이메일</label>
+                    <input type="text" value="${currentUser.username}" disabled />
+                </div>
+                <div class="form-group">
+                    <label>닉네임</label>
+                    <input type="text" id="profileNickname" value="${currentUser.nickname}" />
+                </div>
+                <!--
+                <div class="form-group">
+                    <label>이메일</label>
+                    <input type="email" id="profileEmail" value="${currentUser.email || ''}" />
+                </div>
+                -->
+                <div class="form-group">
+                    <label>새 비밀번호</label>
+                    <input type="password" id="newPassword" placeholder="변경시에만 입력" />
+                </div>
+                <div style="text-align: right;">
+                    <button onclick="store.updateProfile()">수정완료</button>
+                    <button class="secondary" onclick="store.setState({ currentPage: 'list' })">취소</button>
+                </div>
+            </div>
+        `;
+            }
+
+            // 게시글 수정 템플릿
+            editTemplate() {
+                const { selectedPost } = this.state;
+                return `
+            <div class="container">
+                <div class="header">
+                    <h2 class="title">게시글 수정</h2>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="editTitle" value="${selectedPost.title}" />
+                </div>
+                <div class="form-group">
+                    <textarea id="editContent">${selectedPost.content}</textarea>
+                </div>
+                <div style="text-align: right;">
+                    <button onclick="store.updatePost()">수정</button>
+                    <button class="secondary" onclick="store.setState({ currentPage: 'detail' })">취소</button>
+                </div>
+            </div>
+        `;
+            }
+
+            // 게시글 상세 페이지 업데이트 (댓글 기능 추가)
+            detailTemplate() {
+                const { selectedPost, currentUser } = this.state;
+                const likes = selectedPost.likes || 0; // 기본값 설정
+                const commentsCount = selectedPost.comments ? selectedPost.comments.length : 0; // 댓글 수 계산
+                const views = selectedPost.views || 0; // 조회수 기본값 설정
+
+                // 수치 형식을 지정 함수
+                const formatCount = (count) => {
+                    if (count >= 100000) {
+                        return `${Math.floor(count / 1000)}k`;
+                    } else if (count >= 10000) {
+                        return `${Math.floor(count / 1000)}k`;
+                    } else {
+                        return count.toString();
+                    }
+                };
+
+                return `
+            <div class="container">
+                <div id="postDetailPage">
+                    <div class="header">
+                        <h2 class="title">${selectedPost.title}</h2>
+                        <div class="post-meta">
+                            <div>작성자: ${selectedPost.author}</div>
+                            <div>작성일: ${selectedPost.date}</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        ${selectedPost.content}
+                    </div>
+
+                    <!-- 좋아요, 댓글 수, 조회수 -->
+                    <div class="post-stats">
+                    <button onclick="store.likePost()">👍 ${formatCount(likes)} 좋아요</button>
+                    <span>${formatCount(commentsCount)} 댓글 수</span>
+                    <span>${formatCount(views)} 조회수</span>
+                    </div>
+
+                    <div style="text-align: right;" class="post-actions">
+                        <button onclick="store.setState({ currentPage: 'list' })">목록으로</button>
+                        ${selectedPost.author === currentUser?.nickname ? `
+                            <button onclick="store.setState({ currentPage: 'edit', editMode: true })">수정</button>
+                            <button class="danger" onclick="store.deletePost(${selectedPost.id})">삭제</button>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- 댓글 섹션 -->
+                    <div class="comments-section">
+                        <h3>댓글</h3>
+                        <div class="form-group">
+                            <textarea id="commentContent" placeholder="댓글을 입력하세요"></textarea>
+                            <button onclick="store.addComment()">댓글 작성</button>
+                        </div>
+                        <div class="comments-list">
+                            ${selectedPost.comments ? selectedPost.comments.map(comment => `
+                                <div class="comment-item">
+                                    <div class="comment-content">${comment.content}</div>
+                                    <div class="comment-meta">
+                                        <span>${comment.author}</span>
+                                        <span>${comment.date}</span>
+                                        ${comment.author === currentUser?.nickname ?
+                        `<button class="small danger" onclick="store.deleteComment(${comment.id})">삭제</button>`
+                        : ''
+                    }
+                                    </div>
+                                </div>
+                            `).join('') : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            // 좋아요 수와 조회수 증가
+            likePost() {
+                const updatedPost = {
+                    ...this.state.selectedPost,
+                    likes: (this.state.selectedPost.likes || 0) + 1, // 좋아요 수 증가
+                    views: (this.state.selectedPost.views || 0) + 1  // 조회수도 증가 (옵션)
+                };
+
+                this.setState({
+                    selectedPost: updatedPost,
+                    posts: this.state.posts.map(post => post.id === updatedPost.id ? updatedPost : post) // 상태 업데이트
+                });
+
+                alert('좋아요가 추가되었습니다!'); // 알림 추가 (선택 사항)
+            }
+
+
+            writeTemplate() {
+                return `
+            <div class="container">
+                <div id="postWritePage">
+                    <div class="header">
+                        <h2 class="title">게시글 작성</h2>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="postTitle" placeholder="제목을 입력하세요" />
+                    </div>
+                    <div class="form-group">
+                        <textarea id="postContent" placeholder="내용을 입력하세요"></textarea>
+                    </div>
+                    <div style="text-align: right;">
+                        <button onclick="store.savePost()">저장하기</button>
+                        <button class="secondary" onclick="store.setState({ currentPage: 'list' })">취소</button>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+
+            // 회원정보수정
+            updateProfile() {
+                const nickname = document.getElementById('profileNickname').value;
+                const email = document.getElementById('profileEmail').value;
+                const newPassword = document.getElementById('newPassword').value;
+
+                if (!nickname) {
+                    alert('닉네임은 필수입니다.');
+                    return;
+                }
+
+                const updatedUser = {
+                    ...this.state.currentUser,
+                    nickname,
+                    email
+                };
+
+                if (newPassword) {
+                    updatedUser.password = newPassword;
+                }
+
+                const users = this.state.users.map(user =>
+                    user.username === updatedUser.username ? updatedUser : user
+                );
+
+                this.setState({
+                    users,
+                    currentUser: updatedUser,
+                    currentPage: 'list'
+                });
+
+                alert('프로필이 업데이트되었습니다.');
+            }
+
+            // 게시글 수정
+            updatePost() {
+                const title = document.getElementById('editTitle').value;
+                const content = document.getElementById('editContent').value;
+
+                if (!title || !content) {
+                    alert('제목과 내용을 모두 입력해주세요.');
+                    return;
+                }
+
+                const updatedPost = {
+                    ...this.state.selectedPost,
+                    title,
+                    content,
+                    date: new Date().toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    })
+                };
+
+                const posts = this.state.posts.map(post =>
+                    post.id === updatedPost.id ? updatedPost : post
+                );
+
+                this.setState({
+                    posts,
+                    selectedPost: updatedPost,
+                    currentPage: 'detail',
+                    editMode: false
+                });
+
+                alert('게시글이 수정되었습니다.');
+            }
+
+            // 게시글 삭제
+            deletePost(id) {
+                if (!confirm('정말 삭제하시겠습니까?')) return;
+
+                const posts = this.state.posts.filter(post => post.id !== id);
+                this.setState({
+                    posts,
+                    currentPage: 'list'
+                });
+
+                alert('게시글이 삭제되었습니다.');
+            }
+
+            // 댓글 추가
+            addComment() {
+                const content = document.getElementById('commentContent').value;
+                if (!content) {
+                    alert('댓글 내용을 입력해주세요.');
+                    return;
+                }
+
+                const newComment = {
+                    id: new Date().getTime(),
+                    content,
+                    author: this.state.currentUser.nickname,
+                    date: new Date().toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    })
+                };
+
+                const updatedPost = {
+                    ...this.state.selectedPost,
+                    comments: [...(this.state.selectedPost.comments || []), newComment],
+                    commentsCount: ((this.state.selectedPost.commentsCount || 0) + 1) // 댓글 수 증가
+                };
+
+                const posts = this.state.posts.map(post =>
+                    post.id === updatedPost.id ? updatedPost : post
+                );
+
+                this.setState({
+                    posts,
+                    selectedPost: updatedPost
+                });
+
+                document.getElementById('commentContent').value = '';
+            }
+
+            // 댓글 삭제
+            deleteComment(commentId) {
+                if (!confirm('댓글을 삭제하시겠습니까?')) return;
+
+                const updatedPost = {
+                    ...this.state.selectedPost,
+                    comments: this.state.selectedPost.comments.filter(comment => comment.id !== commentId)
+                };
+
+                const posts = this.state.posts.map(post =>
+                    post.id === updatedPost.id ? updatedPost : post
+                );
+
+                this.setState({
+                    posts,
+                    selectedPost: updatedPost
+                });
+            }
+
+            // 상단 네비게이션 바 추가(일단 보류)
+            getNavigation() {
+                const { currentUser } = this.state;
+                const nickname = currentUser ? currentUser.nickname : '사용자';
+                return `
+            <nav class="navigation">
+                <div class="nav-brand">커뮤니티</div>
+                <div class="nav-items">
+                    <span>환영합니다, ${currentUser.nickname}님!</span>
+                    <button onclick="store.setState({ currentPage: 'profile' })">프로필</button>
+                    <button class="secondary" onclick="store.logout()">로그아웃</button>
+                </div>
+            </nav>
+        `;
+            }
+
+
+        }
+
+        // Store 초기화 및 렌더링
+        document.addEventListener('DOMContentLoaded', () => {
+            window.store = new Store();
+            store.render();
+        });
+
+    </script>
+</body>
+
+</html>

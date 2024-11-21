@@ -1,5 +1,5 @@
 ---
-name: Feature 생성/등록
+name: Feature_Submit
 about: 1 task per 1 issue
 title: "[FEATURE] #0-0 Feature 상세"
 labels: ''

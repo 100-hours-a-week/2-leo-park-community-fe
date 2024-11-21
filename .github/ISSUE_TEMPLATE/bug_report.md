@@ -1,5 +1,5 @@
 ---
-name: Custom issue template
+name: Bug_Report
 about: Describe this issue template's purpose here.
 title: " [OS-브라우저-가로사이즈-페이지명] 안건"
 labels: ''

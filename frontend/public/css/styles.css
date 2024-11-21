@@ -1,0 +1,961 @@
+/* 전체적인 기본 스타일 */
+
+* {
+    font-family: 'Noto Sans KR', sans-serif;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: white
+}
+
+.header {
+    text-align: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.title {
+    color: black;
+    font-size: 24px;
+    margin: 0;
+}
+
+
+.container {
+    max-width: 100%;
+    margin: 100px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 5px;
+}
+
+/* 기본 버튼 스타일 */
+button {
+    padding: 12px 24px;
+    background-color: #ACA0EB;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background-color: #7F6AEE;
+}
+
+button.secondary {
+    padding: 12px 24px;
+    color: black;
+    font-size: 16px;
+    background: none;
+    border: none;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+button.secondary:hover {
+    color: #545b62;
+}
+
+
+/* 버튼 변형 */
+button.danger {
+    background-color: #dc3545;
+}
+
+button.danger:hover {
+    background-color: #c82333;
+}
+
+button.small {
+    padding: 4px 8px;
+    font-size: 1.0rem;
+}
+
+button.simple {
+    border: 1px solid black;
+    background-color: transparent;
+    color: black;
+}
+
+button.simple:hover {
+    background-color: lightgray;
+}
+
+
+
+/* 기본 사용자 입력 폼 스타일 */
+
+.form-title {
+    text-align: center;
+    align-items: center;
+    color: black;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 80%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: black;
+}
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+
+/* 페이지 상단 스타일(뒤로가기 버튼 및 프로필 버튼) */
+
+.base-header {
+    /* text-align: center;
+    margin-top: 20px; */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-top: 20px;
+}
+
+
+.back-button {
+    /* .base-header에 있는 뒤로가기 버튼임 */
+    position: absolute;
+    /* left: 500px; 
+    top: 15px; */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: black;
+
+    left: calc(50% - 320px);
+    margin-bottom: 10px;
+}
+
+.back-button:hover {
+    color: gray;
+    background: none;
+}
+
+.base-header h1 {
+    /* font-size: 24px;
+    color: black;
+    margin-bottom: 10px;
+    max-width: 100%;
+    text-align: center; */
+
+    font-size: 24px;
+    color: black;
+    margin-bottom: 10px;
+    max-width: 100%;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* 제목을 화면 중앙에 고정 */
+}
+
+.base-header h2 {
+    font-size: 24px;
+    color: black;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.base-header hr {
+    /* .base-header와 아래 페이지를 구분하는 구분선임 */
+    /* border: 0;
+    height: 1px;
+    background-color: black;
+    width: 100%;
+    margin: 0 auto; */
+
+    border: 0;
+    height: 1px;
+    background-color: black;
+    width: 100%;
+    /* margin: 0 auto; */
+    margin-top: 48px;
+}
+
+
+/* ====================================================================================================================================== */
+
+/* login Page */
+
+.login-form {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.login-form input,
+.login-form textarea {
+    width: 30%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+/* 로그인 화면 버튼 스타일 */
+.login-button-container {
+    display: flex;
+    /* 플렉스 박스 사용 */
+    flex-direction: column;
+    /* 수직 중앙 정렬 */
+    align-items: center;
+    /* 수직 중앙 정렬 (필요한 경우) */
+    margin: 20px 0;
+    /* 여백 추가 */
+}
+
+.login-button {
+    width: 30%;
+    padding: 12px 24px;
+    background-color: #ACA0EB;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    /* margin: 10px 0; */
+}
+
+.login-button:hover {
+    background-color: #7F6AEE;
+}
+
+.login-button.secondary {
+    padding: 12px 24px;
+    color: black;
+    font-size: 16px;
+    background: none;
+    border: none;
+    /* margin: 10px 0; */
+}
+
+.login-button.secondary:hover {
+    color: #545b62;
+}
+
+.label-container {
+    width: 30%;
+    /* 입력 필드와 동일한 너비 */
+    text-align: left;
+    /* 왼쪽 정렬 */
+    margin: 0 auto;
+    /* 중앙에 위치 */
+}
+
+.login-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+}
+
+
+/* ====================================================================================================================================== */
+
+/* register page */
+
+/* 프로필 이미지 관련 스타일 */
+.profile-upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.upload-icon {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 40px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+
+.profile-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #ddd;
+    position: relative;
+    cursor: pointer;
+}
+
+.profile-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-preview small {
+    /* board에서 사용자가 설정한 프로필 이미지가 보이도록 */
+    width: 75px;
+    height: 75px;
+}
+
+.profile-preview:hover .upload-icon {
+    opacity: 1;
+}
+
+/* 이미지가 없을 때는 기본 이미지와 호버 시 + 아이콘을 표시 */
+.profile-preview:not(:has(img[src])) .upload-icon {
+    opacity: 1;
+    background-color: transparent;
+    color: black;
+}
+
+.profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    right: 0;
+}
+
+.profile-options {
+    display: none;
+    position: absolute;
+    right: 10px;
+    top: 50px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.profile-image.show-options+.profile-options {
+    display: block;
+}
+
+/* ====================================================================================================================================== */
+
+
+/* board page */
+
+.board-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-top: 20px;
+}
+
+.board-header h1 {
+    font-size: 24px;
+    color: black;
+    margin-bottom: 10px;
+    max-width: 100%;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* 제목을 화면 중앙에 고정 */
+}
+
+.board-profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    position: absolute;
+    left: calc(50% + 250px);
+    margin-bottom: 10px;
+}
+
+.board-header hr {
+    border: 0;
+    height: 1px;
+    background-color: black;
+    width: 100%;
+    margin-top: 48px;
+}
+
+.board-title {
+    width: 100%;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.board-title h1 {
+    color: black;
+    font-size: 24px;
+    margin: 0;
+    margin-bottom: 20px;
+}
+
+.board-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.board-button-write {
+    padding: 12px 24px;
+    background-color: #ACA0EB;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    margin-left: 480px;
+}
+
+.board-button-write:hover {
+    background-color: #7F6AEE;
+}
+
+
+/* board page - 게시글 목록 스타일 */
+.posts-container {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.post-item {
+    width: 38%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: white;
+}
+
+.post-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+.post-item h3 {
+    margin-bottom: 10px;
+    font-size: 25px;
+    color: black;
+    font-weight: Bold;
+}
+
+
+.post-content {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.post-meta-date-container {
+    display: flex;
+    justify-content: space-between;
+    /* 좌우 끝으로 정렬 */
+    align-items: center;
+    margin-top: 8px;
+    /* 간격 조절 */
+}
+
+.post-meta {
+    display: flex;
+    gap: 10px;
+    /* meta-item 간의 간격 */
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.meta-item .count {
+    margin-left: 10px;
+}
+
+.post-date {
+    color: black;
+    font-size: 16px;
+}
+
+
+.post-footer {
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 18px;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.post-author {
+    display: flex;
+    align-items: center;
+}
+
+
+
+
+/* ====================================================================================================================================== */
+
+
+/* boardWrite & boardEdit page - 게시글 추가 및 수정 스타일 */
+
+
+/* 공통 부모 요소 스타일 */
+.boardWrite-form {
+    margin-bottom: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 가로 중앙 정렬 */
+    justify-content: center; /* 필요시 세로 중앙 정렬 */
+    width: 100%;
+}
+
+/* 이미지 컨테이너 스타일 */
+#postImagePreviewContainer {
+    display: flex;
+    justify-content: center; /* 가로 중앙 정렬 */
+    align-items: center; /* 세로 중앙 정렬 */
+    width: 100%; /* 컨테이너가 부모 너비에 맞게 확장 */
+    margin-top: 10px;
+}
+
+/* 이미지 스타일 */
+#postImagePreview {
+    max-width: 50%; /* 최대 너비 설정 */
+    height: auto;
+    display: block;
+}
+
+.boardWrite-form input,
+.boardWrite-form textarea {
+    width: 50%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.boardWrite-form input:focus,
+.boardWrite-form textarea:focus {
+    outline: none;
+    border-color: black;
+}
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.boardWrite-label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+}
+
+.boardWrite-label-container {
+    width: 50%;
+    text-align: left;
+    margin: 0 auto;
+}
+
+.boardWrite-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.boardWrite-button {
+    width: 30%;
+    padding: 12px 24px;
+    background-color: #ACA0EB;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.boardWrite-button:hover {
+    background-color: #7F6AEE;
+}
+
+/* ====================================================================================================================================== */
+
+/* boardDetail page - 게시글 상세조회 스타일 */
+
+.boardDetail-container {
+    max-width: 40%;
+    margin: 30px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 5px;
+}
+
+.boardDetail-header {
+    width: 100%;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 50px;
+}
+
+#postTitle {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.boardDetail-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 16px;
+
+}
+
+.boardDetail-meta {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+}
+
+.boardDetail-actions button {
+    margin-left: 8px;
+}
+
+.content-image {
+    margin-bottom: 50px;
+}
+
+.content-text {
+    margin-bottom: 30px;
+}
+
+
+.boardDetail-stats {
+    display: flex;
+    max-width: 60%;
+    justify-content: space-around;
+    align-items: center;
+    /* margin-top: 1rem;
+    margin-bottom: 1rem; */
+    margin: 1rem auto;
+    padding: 1rem;
+}
+
+
+.stat-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 숫자와 라벨을 감싸는 상자 스타일 */
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: lightgray;
+    padding: 12px 16px;
+    border-radius: 15px;
+    width: 80px;
+}
+
+/* 숫자 스타일 */
+.stat-number {
+    font-size: 20px;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 4px;
+    background-color: transparent;
+}
+
+/* 라벨 스타일 */
+.stat-label {
+    font-size: 14px;
+    color: black;
+    background-color: transparent;
+}
+
+
+/* 댓글 입력 폼 전체 */
+.comment-form {
+    padding: 20px;
+    margin-top: 20px;
+    border-top: 2px solid #eee;
+}
+
+/* textarea 컨테이너 */
+.textarea-wrapper {
+    position: relative;
+    width: 100%;
+    background: white;
+    margin-top: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 댓글 입력 텍스트박스 */
+#commentContent {
+    width: 100%;
+    height: 120px;
+    padding: 20px;
+    padding-bottom: 60px; /* 버튼과 구분선을 위한 하단 여백 */
+    border: none;
+    border-radius: 25px;
+    background: none;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    min-height: 200px;
+    resize: vertical;
+}
+
+#commentContent::placeholder {
+    color: #999;
+}
+
+/* 버튼 컨테이너 */
+.comment-button-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* 댓글 입력 영역과 댓글 등록 버튼 영역 구분선 */
+.comment-divider {
+    width: 100%;
+    height: 1px;
+    background-color: #eee;
+    border: none;
+    margin: 0 0 15px 0;
+}
+
+/* 댓글 등록 버튼 */
+.comment-submit-button {
+    float: right;
+    background-color: #ACA0EB;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 15px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.comment-submit-button:hover {
+    background-color: #7F6AEE;
+}
+
+
+
+.comments-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid #eee;
+}
+
+.comment {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.comment-wrapper {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.comment-profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: lightgray;
+    flex-shrink: 0;
+}
+
+.comment-content-wrapper {
+    flex-grow: 1;
+}
+
+.comment-meta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    justify-content: space-between;
+}
+
+.meta-left {
+    display: flex;
+    flex-direction: row; /* 작성자와 작성일자를 세로로 정렬 */
+    gap: 1rem;
+}
+
+.meta-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px; /* 수정 및 삭제 버튼 간격 */
+}
+
+
+.author {
+    font-size: 15px;
+    color: black;
+    font-weight: 500;
+}
+
+.date {
+    font-size: 15px;
+    color: black;
+}
+
+.comment-content {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    color: #333;
+}
+
+.comment-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+
+
+/* ====================================================================================================================================== */
+
+/* nicknameEdit page */
+
+/* 프로필 페이지 스타일 */
+.profile-info {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+
+/* ====================================================================================================================================== */
+
+/* passwordEdit page */
+
+
+
+/* ====================================================================================================================================== */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header button {
+        margin-top: 10px;
+    }
+
+    .comment-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .post-item {
+        width: 90%;
+    }
+}
+

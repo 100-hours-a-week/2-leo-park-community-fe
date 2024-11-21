@@ -1,0 +1,71 @@
+<!-- /src/views/register.html -->
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <link rel="stylesheet" href="/public/css/styles.css">
+</head>
+
+<body>
+    <div id="app"></div> <!-- 회원가입 페이지 렌더링 시작 -->
+    <div class="base-header">
+        <button class="back-button" id="backButton">&lt;</button> <!-- 클릭 시 /login 으로 돌아가는 이벤트 리스너 추가해야함 -->
+        <h1> 아무 말 대잔치</h1>
+        <hr>
+    </div>
+    <div class="container">
+        <div class="form-title">회원가입</div>
+        <div class="label-container">
+                <label for="registerprofileImage" class="login-label">프로필 사진</label>
+                <!-- FIXME: label for는 input의 id와 동일해야함(수정 완료) -->
+            </div>
+        <div class="profile-upload-container">
+            <div class="profile-preview" id="imagePreview"> <!-- 이미지 파일을 선택하고 표시할 컨테이너 요소 -->
+                <img src="/public/images/default-profile.png" alt="" id="previewImage" /> <!-- 실제로 선택한 프로필 사진이 표시되는 이미지 요소 -->
+                <div class="upload-icon">+</div>
+            </div>
+        <input type="file" id="registerprofileImage" accept="image/*" style="display: none" /> <!-- 사용자가 프로필 사진을 업데이트 하기 위한 파일 입력 요소 -->
+    </div>
+
+        <div class="login-form">
+            <div class="label-container">
+                <label for="registerUsername" class="login-label">이메일*</label>
+            </div>
+            <input type="text" id="registerUsername" placeholder="이메일을 입력하세요" />
+            <div id="emailError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-form">
+            <div class="label-container">
+                <label for="registerPassword" class="login-label">비밀번호*</label>
+            </div>
+            <input type="password" id="registerPassword" placeholder="비밀번호를 입력하세요" />
+            <div id="passwordError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-form">
+            <div class="label-container">
+                <label for="registerPasswordagain" class="login-label">비밀번호 확인*</label>
+            </div>
+            <input type="password" id="registerPasswordagain" placeholder="비밀번호를 한번 더 입력하세요" />
+            <div id="passwordAgainError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-form">
+            <div class="label-container">
+                <label for="registerNickname" class="login-label">닉네임*</label>
+            </div>
+            <input type="text" id="registerNickname" placeholder="닉네임을 입력하세요" />
+            <div id="nicknameError" class="helper-text" style="color: red"></div>
+        </div>
+        <div class="login-button-container">
+            <button class="login-button" id="registerButton">회원가입</button>
+            <button class="login-button secondary" id="loginButton">로그인하러 가기</button>
+        </div>
+    </div>    
+
+        <!-- register.js를 script로 연결 -->
+        <!-- 절대경로!! -->
+        <script src="/src/js/register.js"></script>
+</body>
+</html>

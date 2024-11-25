@@ -26,16 +26,39 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/boardWrite';
     });
 
-    const profileImage = sessionStorage.getItem('userProfileImage');
+    // 게시글 목록조회 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
+    fetch('/api/user/profile', {
+        method: 'GET',
+        credentials: 'include', // 세션 쿠키를 포함하여 전송
+    })
+        .then(response => {
+            if (response.status === 401) {
+                // 인증되지 않은 경우 로그인 페이지로 리디렉션
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+            return response.json();
+        })
+        .then(user => {
+            if (user) {
+                // 사용자 정보를 사용하여 페이지에 표시
+                const boardProfileImage = document.getElementById('boardProfileImage');
+                if (user.profileImage) {
+                    boardProfileImage.src = user.profileImage;
+                } else {
+                    boardProfileImage.src = '/public/images/default-profile.png';
+                }
 
-    if (profileImage) {
-        const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profileImage;
-    }
-
-    // 프로필 이미지를 클릭하면 dropdownOptions() 함수 실행
-    const boardProfileImage = document.getElementById('boardProfileImage');
-    boardProfileImage.addEventListener('click', dropdownOptions);
+                // 프로필 이미지를 클릭하면 dropdownOptions() 함수 실행
+                boardProfileImage.addEventListener('click', dropdownOptions);
+            }
+        })
+        .catch(error => {
+            console.error('사용자 정보 가져오기 중 오류 발생:', error);
+            alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
+            window.location.href = '/login';
+        });
 
     // 게시글 데이터 로드
     loadPosts();
@@ -45,7 +68,7 @@ async function loadPosts() {
     const postsContainer = document.getElementById('postsContainer');
 
     try {
-        // API에서 게시글 데이터 가져오기
+        // board Startpoint
         const response = await fetch('/api/posts');
         console.log('응답 상태:', response.status); // debug
         if (!response.ok) {
@@ -142,6 +165,29 @@ async function loadPosts() {
     }
 }
 
+// logout Startpoint
+function logout() {
+    // 서버로 로그아웃 요청
+    fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.error) {
+                alert('로그아웃되었습니다.');
+                window.location.href = '/login';
+            } else {
+                alert('로그아웃 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('로그아웃 요청 중 오류 발생:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
+}
+
+// dropDown function
 function dropdownOptions(event) {
     event.stopPropagation();
     const options = document.getElementById('profileOptions');
@@ -159,12 +205,4 @@ function dropdownOptions(event) {
     });
 }
 
-function logout() {
-    // 세션 스토리지에서 로그인 정보 삭제
-    sessionStorage.removeItem('userNickname');
-    sessionStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userProfileImage');
 
-    // 로그인 페이지로 리디렉션
-    window.location.href = '/login';
-}

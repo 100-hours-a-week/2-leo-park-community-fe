@@ -6,25 +6,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원정보수정(닉네임)</title>
-    <link rel="stylesheet" href="/frontend/public/css/styles.css"> <!-- 절대경로!! -->
+    <link rel="stylesheet" href="/public/css/styles.css">
 </head>
 
 <body>
     <div id="app"></div> <!-- 회원정보수정(닉네임) 페이지 렌더링 시작 -->
     <div class="base-header">
+        <button class="back-button" id="backButton">&lt;</button>
         <h1> 아무 말 대잔치</h1>
         <img src="" alt="Profile" id="boardProfileImage" class="board-profile" style="cursor: pointer;">
         <div id="profileOptions" style="display: none; position: absolute; right: 430px; top: 45px; 
                 background: white; border: 1px solid #ccc; border-radius: 4px; 
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000;">
-            <div id="nicknameEdit" style="padding: 8px 16px; cursor: pointer; text-align: center;">
+            <div id="nicknameEditButton"
+                style="padding: 8px 16px; cursor: pointer; text-align: center;">
                 회원정보수정
             </div>
-            <div id="passwordEdit"
+            <div id="passwordEditButton"
                 style="padding: 8px 16px; cursor: pointer; border-top: 1px solid #eee; text-align: center;">
                 비밀번호수정
             </div>
-            <div id="logout"
+            <div id="logoutButton"
                 style="padding: 8px 16px; cursor: pointer; border-top: 1px solid #eee; text-align: center;">
                 로그아웃
             </div>
@@ -35,35 +37,33 @@
         <div class="form-title">회원정보수정</div>
         <div class="label-container">
             <label for="registerprofileImage" class="login-label">프로필 사진*</label>
-            <!-- FIXME: label for는 input의 id와 동일해야함(수정 완료) -->
         </div>
         <div class="profile-upload-container">
-            <div class="profile-preview" id="imagePreview"> <!-- 이미지 파일을 선택하고 표시할 컨테이너 요소 -->
-                <img src="/frontend/public/images/default-profile.png" alt="" id="previewImage" />
-                <!-- 실제로 선택한 프로필 사진이 표시되는 이미지 요소 -->
+            <div class="profile-preview" id="imagePreview"> 
+                <!-- 스크립트에서 동적으로 렌더링 -->
+                <img src="" alt="Preview" id="previewImage" />
                 <div class="upload-icon">+</div>
             </div>
             <input type="file" id="registerprofileImage" accept="image/*" style="display: none" />
-            <!-- 사용자가 프로필 사진을 업데이트 하기 위한 파일 입력 요소 -->
         </div>
 
         <div class="login-form">
             <div class="label-container">
                 <label class="login-label">이메일</label>
-                <div id="registerUsername" style="color: black; text-align: left; margin-bottom: 30px; margin-top: 10px;">
-                    byeonghunpark@snu.ac.kr
+                <!-- 스크립트에서 동적으로 렌더링 -->
+                <div id="userEmail" style="color: black; text-align: left; margin-bottom: 30px; margin-top: 10px;">
                 </div>
             </div>
         </div>
         <div class="login-form">
             <div class="label-container">
-                <label for="registerNickname" class="login-label">닉네임</label>
+                <label for="userNickname" class="login-label">닉네임</label>
             </div>
-            <input type="text" id="registerNickname" placeholder="닉네임을 입력하세요" />
+            <input type="text" id="userNickname" placeholder="닉네임을 입력하세요" />
             <div id="nicknameError" class="helper-text" style="color: red"></div>
         </div>
         <div class="login-button-container">
-            <button class="login-button" id="nicknameEditButton">수정하기</button>
+            <button class="login-button" id="editDoneButton">수정하기</button>
             <button class="login-button secondary" id="signoutButton">회원 탈퇴</button>
         </div>
     </div>
@@ -71,8 +71,7 @@
     <!-- TODO: 토스트메시지 및 모달창 추가 필요 -->
 
     <!-- nicknameEdit.js를 script로 연결 -->
-    <!-- 절대경로!! -->
-    <script src="/frontend/src/js/nicknameEdit.js"></script>
+    <script src="/src/js/nicknameEdit.js"></script>
 </body>
 
 </html>

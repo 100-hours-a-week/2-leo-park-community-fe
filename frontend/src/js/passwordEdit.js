@@ -1,52 +1,147 @@
 // /src/js/passwordEdit.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    const nicknameEdit = document.getElementById('nicknameEdit');
-    const passwordEdit = document.getElementById('passwordEdit');
-    const logout = document.getElementById('logout');
+document.addEventListener('DOMContentLoaded', async () => {
+    const nicknameEditButton = document.getElementById('nicknameEditButton');
+    const passwordEditButton = document.getElementById('passwordEditButton');
+    const logoutButton = document.getElementById('logoutButton');
+    const editedPasswordInput = document.getElementById('editedPassword');
+    const editedPasswordAgainInput = document.getElementById('editedPasswordAgain');
+    const editDoneButton = document.getElementById('editDoneButton');
+    const passwordError = document.getElementById('passwordError');
+    const passwordAgainError = document.getElementById('passwordAgainError');
 
-    // TODO: 게시글 작성 버튼 이벤트 리스너 추가
+    // 회원정보수정(닉네임) 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
+    try {
+        const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include',
+        });
 
-    const profileImage = sessionStorage.getItem('userProfileImage');
-    // 나중에는 서버에 이미지를 저장한 후, 응답으로 이미지 URL을 반환하고 이를 프론트엔드에서 받아서 사용하는 방식으로?
+        if (response.status === 401) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
 
-    if (profileImage) {
+        const user = await response.json();
+        currentUserEmail = user.email;
+        currentUserNickname = user.nickname;
+        profileImage = user.profileImage;
+
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
-        // profileImage는 세션 스토리지에서 가져온 이미지 URL(단순 문자열)이기 때문에 DOM에서 해당 이미지 요소에 접근할 수 있도록
-        // boardProfileImage 변수를 새롭게 선언하여 할당(실제 DOM 요소를 참조하여 화면에 반영)
+        boardProfileImage.addEventListener('click', dropdownOptions);
+    } catch (error) {
+        console.error('사용자 정보를 불러오는 중 오류 발생:', error);
+        alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
+        window.location.href = '/login';
+        return;
     }
 
-    // 프로필 이미지를 클릭하면 dropdownOptions() 함수 실행
-    const boardProfileImage = document.getElementById('boardProfileImage');
-    boardProfileImage.addEventListener('click', dropdownOptions);
-
-    registerButton.addEventListener('click', e => {
+    nicknameEditButton.addEventListener('click', e => {
         e.preventDefault();
-        handleRegister();
+        window.location.href = '/nicknameEdit';
     });
 
-    loginButton.addEventListener('click', e => {
+    passwordEditButton.addEventListener('click', e => {
         e.preventDefault();
-        window.location.href = '/login';
+        window.location.href = '/passwordEdit';
     });
 
-    // 프로필 이미지 프리뷰 영역을 클릭하면 파일 입력 창이 열리도록 이벤트 리스너 추가
-    imagePreview.addEventListener('click', () => {
-        registerProfileImage.click();
-    });
-
-    // 파일 선택 시 이미지 미리보기 업데이트
-    registerProfileImage.addEventListener('change', event => {
-        handleImagePreview(event, previewImage);
-    });
-
-    backButton.addEventListener('click', e => {
+    logoutButton.addEventListener('click', e => {
         e.preventDefault();
-        window.location.href = '/login';
+        logout();
     });
+
+    editDoneButton.addEventListener('click', async e => {
+        e.preventDefault();
+
+        const editedPassword = editedPasswordInput.value.trim();
+        const editedPasswordAgain = editedPasswordAgainInput.value.trim();
+
+        let isValid = true;
+
+        // 변경 비밀번호 유효성 검사
+        if (!editedPassword) {
+            passwordError.textContent = '*비밀번호를 입력하세요.';
+            isValid = false;
+        } else if (
+            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/.test(
+                editedPassword,
+            )
+        ) {
+            passwordError.textContent =
+                '*비밀번호는 8~20자, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
+            isValid = false;
+        } else {
+            passwordError.textContent = '';
+        }
+
+        // 변경 비밀번호 확인 유효성 검사
+        if (!editedPasswordAgain) {
+            passwordAgainError.textContent = '*비밀번호를 한번 더 입력해주세요.';
+            isValid = false;
+        } else if (editedPassword !== editedPasswordAgain) {
+            passwordAgainError.textContent = '*비밀번호가 다릅니다.';
+            isValid = false;
+        } else {
+            passwordAgainError.textContent = '';
+        }
+
+        if (!isValid) {
+            return;
+        }
+
+        // 비밀번호 업데이트 요청
+        try {
+            const response = await fetch('/api/users/password', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    newPassword: editedPassword,
+                }),
+            });
+
+            if (response.ok) {
+                alert('비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.');
+                window.location.href = '/login';
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || '비밀번호 변경에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('비밀번호 변경 중 오류 발생:', error);
+            alert('비밀번호 변경 중 오류가 발생했습니다.');
+        }
+    })
+
 });
 
+
+// logout Startpoint
+function logout() {
+    fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.error) {
+                alert('로그아웃되었습니다.');
+                window.location.href = '/login';
+            } else {
+                alert('로그아웃 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('로그아웃 요청 중 오류 발생:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
+}
+
+
+// dropDown function
 function dropdownOptions(event) {
     event.stopPropagation();
     const options = document.getElementById('profileOptions');

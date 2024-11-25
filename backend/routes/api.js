@@ -1,7 +1,6 @@
 // /backend/routes/api.js
 
 const express = require('express');
-
 const router = express.Router();
 const bcrypt = require('bcrypt');
 
@@ -9,6 +8,11 @@ const bcrypt = require('bcrypt');
 const { isAuthor } = require('../utils/authorization');
 // NOTE: 게시글 이미지를 추가하고 수정할 때, json body에 게시글 제목하고 내용과 함께 담아 한번에 보내고 싶어서 base64로 인코딩함
 const { saveBase64Image } = require('../utils/base64Encoding');
+// 쿠키, 세션을 활용한 인증/인가 구현을 위한 세션 미들웨서
+const { sessionMiddleware } = require('../utils/sessionMiddleware');
+
+// 세션 미들웨어 등록
+router.use(sessionMiddleware);
 
 // // Multer 설정
 // const storage = multer.diskStorage({
@@ -20,6 +24,7 @@ const { saveBase64Image } = require('../utils/base64Encoding');
 //     }
 // });
 // const upload = multer({ storage: storage });
+
 
 // HACK: 임시로 사용자 확인 로직을 위한 테스트용 users 더미 데이터 추가
 const users = [
@@ -40,11 +45,11 @@ const users = [
 // HACK: 임시로 게시글 관련 로직을 위한 테스트용 posts 더미 데이터 추가
 const posts = [
     {
-        id: 1,
+        id: 2,
         title: '첫 번째 게시글',
         content: '이것은 첫 번째 게시글의 내용입니다.',
         author: '작성자1',
-        date: '2024-01-01 12:00:00',
+        date: '2024-05-05 12:00:00',
         likes: 10,
         comments: [
             {
@@ -61,10 +66,10 @@ const posts = [
             },
         ],
         views: 50,
-        image: '/public/images/KTB_zoom_yellow.jpg',
+        image: '/public/images/post_3_1732105837847.png',
     },
     {
-        id: 2,
+        id: 1,
         title: '두 번째 게시글',
         content: '이것은 두 번째 게시글의 내용입니다.',
         author: '작성자2',
@@ -83,54 +88,137 @@ const posts = [
     },
 ];
 
-/* ============ 사용자 인증 관련 라우트 ============ */
 
-// 서버 -> 클라이언트 로그인 응답
+/* ============ About users routes ============ */
+
+// login Endpoint 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
-    // 이메일이 제공되었는지 확인
-    if (!email) {
-        return res
-            .status(400)
-            .json({ errorField: 'email', message: '이메일을 입력해주세요.' });
-    }
+    try {
+        const user = users.find(user => user.email === email);
+        // 이메일로 사용자 검색
+        if (!user) {
+            return res.status(401).json({
+                error: true,
+                errorField: 'email',
+                message: '등록되지 않은 이메일입니다.',
+            });
+        }
+        // 사용자 비밀번호 확인
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
-    // 비밀번호가 제공되었는지 확인
-    if (!password) {
-        return res.status(400).json({
-            errorField: 'password',
-            message: '비밀번호를 입력해주세요.',
+        if (!passwordMatch) {
+            return res.status(401).json({
+                error: true,
+                errorField: 'password',
+                message: '비밀번호가 일치하지 않습니다.',
+            });
+        }
+
+        // 로그인 성공 시에 세션에 사용자 정보 저장
+        req.session.user = {
+            email: user.email,
+            nickname: user.nickname,
+            profileImage: user.profileImage,
+        };
+
+        res.status(200).json({
+            error: false,
+            message: '로그인에 성공했습니다.',
+        });
+    } catch (error) {
+        console.error('로그인 중 오류 발생:', error);
+        res.status(500).json({
+            error: true,
+            message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
         });
     }
+});
 
-    const user = users.find(u => u.email === email);
-
-    if (!user) {
+// login Success Endpoint
+router.get('/user/profile', (req, res) => {
+    if (!req.session.user) {
         return res.status(401).json({
-            errorField: 'email',
-            message: '등록되지 않은 이메일입니다.',
+            error: true,
+            message: '로그인이 필요합니다.',
         });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+    res.status(200).json(req.session.user);
+});
 
-    if (!passwordMatch) {
-        return res.status(401).json({
-            errorField: 'password',
-            message: '비밀번호가 일치하지 않습니다.',
+// logout Endpoint
+// NOTE: req.session.destroy: 서버에서 해당 세션 데이터를 삭제
+// NOTE: res.clearCookie('connect.sid'); 클라이언트 브라우저에서 세션 쿠리를 삭제
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('세션 삭제 중 오류 발생:', err);
+            return res.status(500).json({
+                error: true,
+                message: '로그아웃 중 오류가 발생했습니다.',
+            });
+        }
+
+        res.clearCookie('connect.sid');
+        res.status(200).json({
+            error: false,
+            message: '로그아웃되었습니다.',
         });
-    }
-
-    // 로그인 성공 시 사용자 정보 반환
-    res.json({
-        email: user.email,
-        nickname: user.nickname,
-        profileImage: user.profileImage,
     });
 });
 
-// 서버 -> 클라이언트 회원가입 응답
+// signout Endpoint
+router.delete('/users/delete', async (req, res) => {
+    // 세션에서 사용자 정보 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userEmail = req.session.user.email;
+
+    try {
+        // 1. users 배열에서 사용자 삭제
+        const userIndex = users.findIndex(user => user.email === userEmail);
+        if (userIndex === -1) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+        const deletedUser = users.splice(userIndex, 1)[0]; // 삭제된 사용자 정보
+
+        // 2. posts 배열에서 해당 사용자의 게시글 및 댓글 삭제
+        posts.forEach(post => {
+            // 게시글 작성자가 삭제된 사용자일 경우 게시글 삭제
+            if (post.author === deletedUser.nickname) {
+                posts.splice(posts.indexOf(post), 1);
+            } else {
+                // 댓글 작성자가 삭제된 사용자일 경우 댓글 삭제
+                post.comments = post.comments.filter(
+                    comment => comment.author !== deletedUser.nickname,
+                );
+            }
+        });
+
+        // 3. 세션 삭제 및 쿠키 제거
+        req.session.destroy(err => {
+            if (err) {
+                console.error('세션 삭제 중 오류 발생:', err);
+                return res.status(500).json({
+                    message: '계정 삭제 중 오류가 발생했습니다.',
+                });
+            }
+
+            res.clearCookie('connect.sid');
+            // 4. 성공 응답
+            res.status(200).json({ message: '계정이 삭제되었습니다.' });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: '계정 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+// register Endpoint
 router.post('/register', async (req, res) => {
     const { email, password, nickname, profileImage } = req.body;
 
@@ -216,10 +304,11 @@ router.post('/register', async (req, res) => {
         email,
         passwordHash: hashedPassword,
         nickname,
-        profileImage: profileImage || '/public/images/default-profile.png', // 기본 이미지 설정
+        profileImage: profileImage || '/public/images/default-profile.png',
+        // 사용자가 설정한 프로필 이미지가 별도로 없을 경우에는 기본 이미지 설정
     };
 
-    users.push(newUser); // 실제로는 데이터베이스에 저장해야 합니다.
+    users.push(newUser); // 실제로는 데이터베이스에 저장
 
     // 8. 성공 응답
     return res.status(201).json({
@@ -230,17 +319,167 @@ router.post('/register', async (req, res) => {
     });
 });
 
-/* ============ 게시글 및 댓글 관련 라우트 ============ */
 
-// 모든 게시글 데이터 반환 엔드포인트
+// nicknameEdit Endpoint
+router.patch('/users/account', (req, res) => {
+    // 세션에서 사용자 정보 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userEmail = req.session.user.email;
+    const { newNickname, profileImage } = req.body;
+
+    try {
+        // 1. 이메일로 사용자 검색
+        const user = users.find(user => user.email === userEmail);
+
+        if (!user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+
+        // 2. 닉네임이 제공된 경우 유효성 검사 및 업데이트
+        if (newNickname) {
+            if (newNickname.length > 10 || /\s/.test(newNickname)) {
+                return res.status(400).json({
+                    error: '닉네임은 10자 이내여야 하며, 공백이 포함될 수 없습니다.',
+                });
+            }
+
+            // 중복 닉네임 확인
+            const duplicateNickname = users.some(
+                user => user.nickname === newNickname && user.email !== userEmail,
+            );
+
+            if (duplicateNickname) {
+                return res.status(409).json({
+                    error: '이미 사용 중인 닉네임입니다.',
+                });
+            }
+
+            user.nickname = newNickname;
+            req.session.user.nickname = newNickname;
+            // NOTE: 세션의 닉네임도 업데이트
+        }
+
+        // 3. 프로필 이미지가 제공된 경우 업데이트
+        if (profileImage) {
+            try {
+                const filename = `profile_${user.email}_${Date.now()}.png`;
+                const imageUrl = saveBase64Image(profileImage, filename);
+                user.profileImage = imageUrl;
+                req.session.user.profileImage = imageUrl;
+                // NOTE: 세션의 프로필 이미지도 업데이트
+            } catch (error) {
+                console.error('프로필 이미지 저장 중 오류 발생:', error);
+                return res.status(500).json({ error: '프로필 이미지 저장 중 오류가 발생했습니다.' });
+            }
+        }
+
+        res.status(200).json({
+            message: '계정 정보가 성공적으로 변경되었습니다.',
+            updatedNickname: user.nickname,
+            updatedProfileImage: user.profileImage,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: '계정 정보 변경 중 오류가 발생했습니다.' });
+    }
+});
+
+
+// passwordEdit Endpoint
+router.patch('/users/password', async (req, res) => {
+    // 세션에서 사용자 정보 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userEmail = req.session.user.email;
+    const { newPassword } = req.body;
+
+    try {
+        // 1. 이메일로 사용자 검색
+        const user = users.find(user => user.email === userEmail);
+
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        // 2. 새 비밀번호 유효성 검사
+        if (
+            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/.test(
+                newPassword,
+            )
+        ) {
+            return res.status(400).json({
+                message:
+                    '새 비밀번호는 8~20자, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.',
+            });
+        }
+
+        // 3. 새 비밀번호와 기존 비밀번호 비교
+        const newPasswordMatch = await bcrypt.compare(
+            newPassword,
+            user.passwordHash,
+        );
+
+        if (newPasswordMatch) {
+            return res.status(400).json({
+                message: '새 비밀번호는 기존 비밀번호와 다르게 설정해야 합니다.',
+            });
+        }
+
+        // 4. 비밀번호 업데이트
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.passwordHash = hashedPassword;
+
+        // 5. 세션 무효화 및 로그아웃 처리
+        req.session.destroy(err => {
+            if (err) {
+                console.error('세션 삭제 중 오류 발생:', err);
+                return res.status(500).json({
+                    message: '비밀번호 변경 중 오류가 발생했습니다.',
+                });
+            }
+
+            res.clearCookie('connect.sid');
+            res.status(200).json({
+                message: '비밀번호가 성공적으로 변경되었습니다.',
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: '비밀번호 변경 중 오류가 발생했습니다.' });
+    }
+});
+
+module.exports = router;
+
+
+
+
+
+
+
+/* ============ About posts routes ============ */
+
+// board Endpoint
 router.get('/posts', (req, res) => {
     console.log('클라이언트에서 /api/posts 관련 GET 요청이 도착했습니다.'); // debug
     res.json(posts);
 });
 
-// 게시글 추가 엔드포인트
+// boardWrite Endpoint
 router.post('/posts', (req, res) => {
-    const { title, content, image, author, date } = req.body;
+    // 세션에서 사용자 정보 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
+
+    const { title, content, image } = req.body;
 
     // 유효성 검사
     if (!title || !content) {
@@ -255,12 +494,20 @@ router.post('/posts', (req, res) => {
 
     // 새로운 게시글 생성
     const newPost = {
-        id: posts.length > 0 ? posts[posts.length - 1].id + 1 : 1,
+        id: posts.length + 1,
         title,
         content,
-        image: null,
-        author,
-        date,
+        image,
+        author: userNickname,
+        date: new Date().toLocaleString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        }),
         likes: 0,
         comments: [],
         views: 0,
@@ -281,7 +528,8 @@ router.post('/posts', (req, res) => {
     }
 
     // posts 배열에 추가
-    posts.push(newPost);
+    // NOTE: 새로운 게시글이 상단에 노출되도록 하기 위해 push -> unshift로 변경
+    posts.unshift(newPost);
 
     res.status(201).json({
         message: '게시글이 성공적으로 등록되었습니다.',
@@ -289,102 +537,18 @@ router.post('/posts', (req, res) => {
     });
 });
 
-// 특정 게시글 조회 엔드포인트
-router.get('/posts/:id', (req, res) => {
-    const { id } = req.params;
-    const post = posts.find(p => p.id === parseInt(id, 10));
-
-    if (!post) {
-        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
-    }
-
-    res.json(post);
-});
-
-// 조회수 증가 엔드포인트
-router.post('/posts/:id/views', (req, res) => {
-    const { id } = req.params;
-
-    const post = posts.find(p => p.id === parseInt(id, 10));
-
-    if (!post) {
-        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
-    }
-
-    post.views += 1;
-
-    res.json({ views: post.views });
-});
-
-// 좋아요 증가 엔드포인트
-router.post('/posts/:id/like', (req, res) => {
-    const postId = parseInt(req.params.id, 10);
-
-    // 해당 ID의 게시글 찾기
-    const post = posts.find(p => p.id === postId);
-    if (!post) {
-        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
-    }
-
-    // 좋아요 증가
-    post.likes += 1;
-
-    res.status(200).json({
-        message: '좋아요가 추가되었습니다.',
-        likes: post.likes,
-    });
-});
-
-// 댓글 등록 엔드포인트
-router.post('/posts/:id/comments', (req, res) => {
-    const { id } = req.params;
-    const { content, author, date } = req.body;
-
-    const post = posts.find(p => p.id === parseInt(id, 10));
-
-    if (!post) {
-        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
-    }
-
-    const newComment = {
-        id: post.comments.length + 1,
-        author,
-        content,
-        date,
-    };
-
-    post.comments.push(newComment);
-
-    res.status(201).json(newComment);
-});
-
-// 게시글 삭제 엔드포인트
-router.delete('/posts/:id', (req, res) => {
-    const { id } = req.params;
-    const userNickname = req.headers['user-nickname']; // 요청 헤더에서 사용자 닉네임 가져오기
-
-    const postIndex = posts.findIndex(p => p.id === parseInt(id, 10));
-
-    if (postIndex === -1) {
-        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
-    }
-
-    const post = posts[postIndex];
-
-    if (!isAuthor(post.author, userNickname)) {
-        return res.status(403).json({ message: '권한이 없습니다.' }); // 작성자만 삭제 가능
-    }
-
-    posts.splice(postIndex, 1);
-
-    res.json({ message: '게시글이 삭제되었습니다.' });
-});
-
-// 게시글 수정 엔드포인트
+// boardEdit Endpoint
 router.put('/posts/:id', (req, res) => {
     const { id } = req.params;
+
+    // 세션에서 사용자 정보 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
+
     const { title, content, image } = req.body;
-    const userNickname = req.headers['user-nickname']; // 요청 헤더에서 사용자 닉네임 가져오기
 
     const post = posts.find(p => p.id === parseInt(id, 10));
 
@@ -406,6 +570,18 @@ router.put('/posts/:id', (req, res) => {
     // 게시글 내용 수정
     post.title = title;
     post.content = content;
+
+    // 게시글 수정 시간 업데이트
+    post.date = new Date().toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+
     if (image) {
         try {
             // 새로운 이미지 저장
@@ -423,6 +599,114 @@ router.put('/posts/:id', (req, res) => {
     res.json({ message: '게시글이 수정되었습니다.', post });
 });
 
+// boardDetail & boardEdit Endpoint
+router.get('/posts/:id', (req, res) => {
+    const { id } = req.params;
+    const post = posts.find(p => p.id === parseInt(id, 10));
+
+    if (!post) {
+        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    res.json(post);
+});
+
+// boardDetail views Endpoint
+router.post('/posts/:id/views', (req, res) => {
+    const { id } = req.params;
+
+    const post = posts.find(p => p.id === parseInt(id, 10));
+
+    if (!post) {
+        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    post.views += 1;
+
+    res.json({ views: post.views });
+});
+
+// boardDetail likes Endpoint
+router.post('/posts/:id/likes', (req, res) => {
+    const postId = parseInt(req.params.id, 10);
+
+    // 해당 ID의 게시글 찾기
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    // 좋아요 증가
+    post.likes += 1;
+
+    res.status(200).json({
+        message: '좋아요가 추가되었습니다.',
+        likes: post.likes,
+    });
+});
+
+// boardDetail comments add Endpoint
+router.post('/posts/:id/comments', (req, res) => {
+    const { id } = req.params;
+    const { content, date } = req.body;
+
+    // 세션 사용자 확인
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
+
+    const post = posts.find(p => p.id === parseInt(id, 10));
+
+    if (!post) {
+        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    const newComment = {
+        id: post.comments.length + 1,
+        author: userNickname, // from session/cookie
+        content,
+        date,
+    };
+
+    post.comments.push(newComment);
+
+    res.status(201).json(newComment);
+});
+
+// boardDetail post delete Endpoint
+router.delete('/posts/:id', (req, res) => {
+    const { id } = req.params;
+
+    // 세션 사용자 확인
+    // req.session: 클라이언트가 요청 시 전송한 세션 쿠키(connect.id)를 
+    // 기반으로 서버가 해당 쿠키를 사용해 저장된 세션 정보를 복원한 객체
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
+
+    const postIndex = posts.findIndex(p => p.id === parseInt(id, 10));
+
+    if (postIndex === -1) {
+        return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    const post = posts[postIndex];
+
+    if (!isAuthor(post.author, userNickname)) {
+        return res.status(403).json({ message: '권한이 없습니다.' }); // 작성자만 삭제 가능
+    }
+
+    posts.splice(postIndex, 1);
+
+    res.json({ message: '게시글이 삭제되었습니다.' });
+});
+
+
+
 // // 이미지 업로드 엔드포인트(multer 모듈 사용 시에만 활성화)
 // router.post('/upload', upload.single('image'), (req, res) => {
 //     if (!req.file) {
@@ -434,10 +718,15 @@ router.put('/posts/:id', (req, res) => {
 //     res.status(200).json({ imageUrl: imageUrl });
 // });
 
-// 댓글 삭제 엔드포인트
+// boardDetail comments delete Endpoint
 router.delete('/posts/:postId/comments/:commentId', (req, res) => {
     const { postId, commentId } = req.params;
-    const userNickname = req.headers['user-nickname']; // 요청 헤더에서 사용자 닉네임 가져오기
+
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
 
     const post = posts.find(p => p.id === parseInt(postId, 10));
 
@@ -464,12 +753,17 @@ router.delete('/posts/:postId/comments/:commentId', (req, res) => {
     res.json({ message: '댓글이 삭제되었습니다.' });
 });
 
-// 댓글 수정 엔드포인트
+// boardDetail comments edit Endpoint
 router.put('/posts/:postId/comments/:commentId', (req, res) => {
     const postId = parseInt(req.params.postId, 10);
     const commentId = parseInt(req.params.commentId, 10);
     const { content } = req.body;
-    const userNickname = req.headers['user-nickname'];
+
+    if (!req.session.user) {
+        return res.status(401).json({ message: '로그인이 필요합니다.' });
+    }
+
+    const userNickname = req.session.user.nickname;
 
     if (!content || content.trim() === '') {
         return res.status(400).json({ message: '댓글 내용은 필수입니다.' });
@@ -492,7 +786,12 @@ router.put('/posts/:postId/comments/:commentId', (req, res) => {
 
     comment.content = content;
 
-    res.status(200).json(comment);
+    res.status(200).json({
+        message: '댓글이 성공적으로 수정되었습니다.',
+        updatedComment: comment,
+    });
 });
+
+
 
 module.exports = router;

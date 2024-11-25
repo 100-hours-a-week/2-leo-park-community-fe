@@ -63,76 +63,38 @@ function handleLogin() {
     // 이메일과 비밀번호가 잘못 입력된 상태에서 API 요청 금지
     if (!isValid) return;
 
-    // // 사용자 확인 로직 추가
-    // const user = users.find(u => u.email === email);
-
-    // if (!user) {
-    //     emailError.textContent = "등록되지 않은 이메일입니다.";
-    //     return;
-    // }
-
-    // if (user.password !== password) {
-    //     passwordError.textContent = "비밀번호가 일치하지 않습니다.";
-    //     return;
-    // }
-
-    // 서버로 로그인 요청
+    // login Startpoint
     fetch('/api/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include', // 세션 쿠키를 포함하여 전송
         body: JSON.stringify({ email, password }),
     })
         .then(response => response.json())
         .then(result => {
+            console.log('로그인 응답:', result); // 디버깅을 위한 콘솔 로그 추가
+
             if (result.error) {
                 // 서버에서 온 에러 처리
                 if (result.errorField === 'email') {
                     emailError.textContent = result.message;
                 } else if (result.errorField === 'password') {
                     passwordError.textContent = result.message;
+                } else {
+                    alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
                 }
             } else {
                 // 로그인 성공 처리
-                sessionStorage.setItem('userNickname', result.nickname);
-                sessionStorage.setItem('userEmail', result.email);
-                alert(`환영합니다, ${result.nickname}님!`);
-                window.location.href = '/board';
+                alert('환영합니다! 게시판으로 이동합니다.');
+                window.location.href = '/board'; // 게시글 목록조회 페이지로 이동
             }
         })
         .catch(error => {
-            console.error(error);
+            console.error('로그인 요청 중 오류 발생:', error);
             alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
         });
 }
 
-//     // API 요청
-//     fetch("/api/login", {
-//         method: "POST",
-//         headers: {
-//             "Content-Type": "application/json"
-//         },
-//         // 사용자가 웹 브라우저에서 입력한 정보를 body에 담아서 JSON 형태로 서버에 보내는 과정(요청)
-//         // fetch 요청에서 보내는 데이터는 서버의 인증을 위한 입력값!!
-//         body: JSON.stringify({ email, password })
-//     })
-//     .then(response => {
-//         if (!response.ok) throw new Error("로그인 실패");
-//         return response.json();
-//     })
-//     .then(result => {
-//         // 로그인 성공 시 사용자 정보를 세션 스토리지에 저장
-//         // SessionStorage에 저장하는 데이터는 fetch 요청 결과로 인증된 후에 서버에서 응답받은 사용자 정보를 의미!!
 
-//         sessionStorage.setItem('userNickname', result.nickname);
-//         sessionStorage.setItem('userEmail', result.email);
-
-//         alert(`환영합니다, ${user.nickname}님!`);
-//         window.location.href = "board.html"; // 여기에 게시글페이지로 이동하는거 추가해야함
-//     })
-//     .catch(error => {
-//         console.error(error);
-//         alert("로그인 중 문제가 발생했습니다. 다시 시도해주세요.");
-//     });
-// }

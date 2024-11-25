@@ -3,12 +3,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('loginButton');
     const registerButton = document.getElementById('registerButton');
-    const imagePreview = document.getElementById('imagePreview');
-    const registerProfileImage = document.getElementById(
-        'registerprofileImage',
-    );
-    const previewImage = document.getElementById('previewImage');
     const backButton = document.getElementById('backButton');
+    const imagePreview = document.getElementById('imagePreview');
+    const registerProfileImage = document.getElementById('registerprofileImage');
+    const previewImage = document.getElementById('previewImage');
 
     registerButton.addEventListener('click', e => {
         e.preventDefault();
@@ -36,23 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// 프로필 이미지 사진 추가하여 기본 이미지 사진을 변경
-function handleImagePreview(event) {
-    const file = event.target.files[0];
-    const previewImage = document.getElementById('previewImage');
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            previewImage.style.display = 'block';
-            previewImage.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    } else {
-        previewImage.style.display = 'none';
-        previewImage.src = '';
-    }
-}
 
 function handleRegister() {
     const emailInput = document.getElementById('registerUsername'); // 이메일
@@ -130,24 +111,9 @@ function handleRegister() {
         nicknameError.textContent = '';
     }
 
-    // // 이미 가입한 사람인지 확인하는 비교 로직 추가(클라이언트 측에서 미리 확인 가능하도록 구현)
-    // const userEmailCheck = users.find(u => u.email === email);
-
-    // if (userEmailCheck) {
-    //     emailError.textContent = "*중복된 이메일입니다.";
-    //     isValid = false;
-    // }
-
-    // const userNicknameCheck = users.find(u => u.nickname === nickname);
-
-    // if (userNicknameCheck) {
-    //     nicknameError.textContent = "*중복된 닉네임입니다.";
-    //     isValid = false;
-    // }
-
     if (!isValid) return;
 
-    // 서버로 회원가입 요청
+    // register Startpoint
     fetch('/api/register', {
         method: 'POST',
         headers: {
@@ -172,11 +138,6 @@ function handleRegister() {
                     alert(`오류 발생: ${result.message}`);
                 }
             } else {
-                // 회원가입 성공 처리
-                sessionStorage.setItem('userNickname', result.nickname);
-                sessionStorage.setItem('userEmail', result.email);
-                sessionStorage.setItem('userProfileImage', result.profileImage);
-
                 alert('회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.');
                 window.location.href = '/login'; // 로그인 페이지로 이동
             }
@@ -187,39 +148,21 @@ function handleRegister() {
         });
 }
 
-//     fetch('/api/register', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//             email: email,
-//             password: password,
-//             nickname: nickname,
-//             profileImage: profileImage // 이미지 URL 전송
-//         }),
-//     })
-//         .then(response => {
-//             if (response.ok) {
-//                 return response.json();
-//             } else {
-//                 return response.json().then(errorData => {
-//                     throw new Error(errorData.message);
-//                 });
-//             }
-//         })
-//         .then(result => {
-//             // 회원가입 성공 시 사용자 정보를 세션 스토리지에 저장
-//             // SessionStorage에 저장하는 데이터는 fetch 요청 결과로 인증된 후에 서버에서 응답받은 사용자 정보를 의미!!
+// handleProfileImage function
+function handleImagePreview(event) {
+    const file = event.target.files[0];
+    const previewImage = document.getElementById('previewImage');
 
-//             sessionStorage.setItem('userNickname', result.nickname);
-//             sessionStorage.setItem('userEmail', result.email);
-//             sessionStorage.setItem("userProfileImage", result.profileImage);
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImage.style.display = 'block';
+            previewImage.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewImage.style.display = 'none';
+        previewImage.src = '';
+    }
+}
 
-//             alert("회원가입이 완료되었습니다.");
-//             window.location.href = '/login'; // 로그인 페이지로 돌아가려면 어떻게? 여기에서 REST API 라우터가 쓰이는 건가..?
-//         })
-//         .catch(error => {
-//             console.error('회원가입 요청 중 오류 발생:', error);
-//             alert(`회원가입 실패: ${error.message}`);
-//         });

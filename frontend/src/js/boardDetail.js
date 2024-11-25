@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const passwordEditButton = document.getElementById('passwordEditButton');
     const logoutButton = document.getElementById('logoutButton');
     const backButton = document.getElementById('backButton');
-    const editButton = document.getElementById('editButton');
-    const deleteButton = document.getElementById('deleteButton');
+    const boardEditButton = document.getElementById('editButton');
+    const boardDeleteButton = document.getElementById('deleteButton');
     const likeButton = document.getElementById('likeButton');
     const addCommentButton = document.getElementById('addCommentButton');
 
@@ -31,52 +31,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/board';
     });
 
-    // 프로필 이미지 표시
-    const profileImage = sessionStorage.getItem('userProfileImage');
-    if (profileImage) {
+    boardEditButton.addEventListener('click', () => {
+        window.location.href = `/boardEdit?id=${postId}`;
+    });
+
+    // 게시글 상세조회 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
+    try {
+        const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include', // 세션 쿠키를 포함하여 전송
+        });
+
+        if (response.status === 401) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const user = await response.json();
+        currentUserEmail = user.email;
+        currentUserNickname = user.nickname;
+        profileImage = user.profileImage;
+
+        // 프로필 이미지 설정 및 이벤트 리스너 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
+        boardProfileImage.addEventListener('click', dropdownOptions);
+    } catch (error) {
+        console.error('사용자 정보를 불러오는 중 오류 발생:', error);
+        alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
+        window.location.href = '/login';
+        return;
     }
 
-    // 프로필 이미지를 클릭하면 dropdownOptions() 함수 실행
-    const boardProfileImage = document.getElementById('boardProfileImage');
-    boardProfileImage.addEventListener('click', dropdownOptions);
-
-    // 현재 로그인한 사용자 닉네임 가져오기
-    // HACK: sessionStorage에 일단 저장된 userNickname이 없을 경우 "Anybody"로 대체
-    // NOTE: 나중에 게시글하고 댓글 수정 및 삭제할 때 작성자와 시도자가 같은지를 서버에서 검토하기 때문에 currentUserNickname을 요청 헤더에 포함시켜야하는데
-    // 요청 헤더는 아스키 코드 말고 한글 같은 유니코드가 포함되니까 오류가 발생했음("익명"이라고 명시된 부분이 있으면 모두 "Anybody"로 수정!)
-    const currentUserNickname =
-        sessionStorage.getItem('userNickname') || 'Anybody';
-
-    // URL에서 게시글 ID 가져오기
+    // NOTE: URL에서 게시글 ID 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 
     let selectedPost = null;
 
-    // 게시글 데이터 가져오기
+    // boardDetail Startpoint
     try {
-        const response = await fetch(`/api/posts/${postId}`);
+        const response = await fetch(`/api/posts/${postId}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
         if (!response.ok) {
             throw new Error('게시글을 가져오는 데 실패했습니다.');
         }
         selectedPost = await response.json();
 
-        // 조회수 증가
+        // boardDetail views Startpoint
         await fetch(`/api/posts/${postId}/views`, { method: 'POST' });
 
         // 게시글 정보 표시
-        displayPost(selectedPost);
+        displayPost(selectedPost, currentUserNickname);
     } catch (error) {
         console.error(error);
         alert('게시글을 불러오는 중 오류가 발생했습니다.');
     }
 
-    // NOTE: 좋아요수 증가 데이터를 동적으로 렌더링하기 위해서 일단 추가
+    // boardDetail likes Startpoint
     likeButton.addEventListener('click', async () => {
         try {
-            await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+            await fetch(`/api/posts/${postId}/likes`, { method: 'POST' });
             selectedPost.likes += 1;
             document.getElementById('likeCount').innerText = selectedPost.likes;
         } catch (error) {
@@ -85,6 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // boardDetail comments add Startpoint
     addCommentButton.addEventListener('click', async () => {
         const commentContent = document
             .getElementById('commentContent')
@@ -96,7 +115,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const newComment = {
             content: commentContent,
-            author: currentUserNickname,
             date: new Date().toLocaleString('ko-KR', {
                 year: 'numeric',
                 month: '2-digit',
@@ -112,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(newComment),
             });
             if (!response.ok) {
@@ -127,35 +146,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 게시글 수정 버튼 클릭 시 수정 페이지로 이동
-    editButton.addEventListener('click', () => {
-        window.location.href = `/boardEdit?id=${postId}`;
-    });
+    
 
-    // 삭제 버튼 클릭 시 게시글 삭제
+    // boardDetail post delete Startpoint
     // TODO: 게시글 삭제 시 삭제 확인 모달창을 통해 사용자가 확인할 수 있도록 하는 인터페이스 추가
-    deleteButton.addEventListener('click', async () => {
+    boardDeleteButton.addEventListener('click', async () => {
         if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
             try {
                 const response = await fetch(`/api/posts/${postId}`, {
                     method: 'DELETE',
-                    headers: {
-                        'user-nickname': currentUserNickname, // 백엔드 쪽에서 작성자와 게시글 삭제 시도자가 동일한지를 확인하기 때문에 요청 헤더에 포함
-                    },
+                    credentials: 'include',
                 });
                 if (!response.ok) {
-                    throw new Error('게시글 삭제에 실패했습니다.');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || '게시글 삭제에 실패했습니다.');
                 }
                 alert('게시글이 삭제되었습니다.');
                 window.location.href = '/board';
             } catch (error) {
                 console.error(error);
-                alert('게시글 삭제 중 오류가 발생했습니다.');
+                alert(error.message || '게시글 삭제 중 오류가 발생했습니다.');
             }
         }
     });
 
-    // 댓글 삭제 함수
+    // boardDetail comments delete Startpoint
     window.deleteComment = async commentId => {
         if (confirm('댓글을 삭제하시겠습니까?')) {
             try {
@@ -163,26 +178,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `/api/posts/${postId}/comments/${commentId}`,
                     {
                         method: 'DELETE',
-                        headers: {
-                            'user-nickname': currentUserNickname, // 백엔드 쪽에서 작성자와 댓글 삭제 시도자가 동일한지를 확인하기 때문에 요청 헤더에 포함
-                        },
+                        credentials: 'include',
                     },
                 );
                 if (!response.ok) {
-                    throw new Error('댓글 삭제에 실패했습니다.');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || '댓글 삭제에 실패했습니다.');
                 }
                 selectedPost.comments = selectedPost.comments.filter(
                     comment => comment.id !== commentId,
                 );
-                renderComments(selectedPost.comments);
+                renderComments(selectedPost.comments, currentUserNickname);
             } catch (error) {
                 console.error(error);
-                alert('댓글 삭제 중 오류가 발생했습니다.');
+                alert(error.message || '댓글 삭제 중 오류가 발생했습니다.');
             }
         }
     };
 
-    // 댓글 수정 함수 추가
+    // boardDetail comments edit Startpoint
     // TODO: 댓글 수정 시 프롬프트 입력이 아닌 댓글 입력창을 통해 수정할 수 있도록 하는 인터페이스 추가
     // TODO: 댓글 삭제 시 삭제 확인 모달창을 통해 사용자가 확인할 수 있도록 하는 인터페이스 추가
     window.editComment = async commentId => {
@@ -207,26 +221,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'user-nickname': currentUserNickname, // 백엔드 쪽에서 작성자와 댓글 수정 시도자가 동일한지를 확인하기 때문에 요청 헤더에 포함
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ content: newContent }),
                 },
             );
             if (!response.ok) {
-                throw new Error('댓글 수정에 실패했습니다.');
+                const errorData = await response.json();
+                throw new Error(errorData.message || '댓글 수정에 실패했습니다.');
             }
             const updatedComment = await response.json();
             comment.content = updatedComment.content;
-            renderComments(selectedPost.comments);
+            renderComments(selectedPost.comments, currentUserNickname);
         } catch (error) {
             console.error(error);
-            alert('댓글 수정 중 오류가 발생했습니다.');
+            alert(error.message || '댓글 수정 중 오류가 발생했습니다.');
         }
     };
+
+
+    
 });
 
 // 게시글 정보 표시 함수
-function displayPost(post) {
+function displayPost(post, currentUserNickname) {
     document.getElementById('postTitle').innerText = post.title;
     document.getElementById('postAuthor').innerText = `작성자: ${post.author}`;
     document.getElementById('postDate').innerText = `작성일: ${post.date}`;
@@ -246,19 +264,17 @@ function displayPost(post) {
     }
 
     // 현재 사용자가 작성자인 경우 게시글 수정 및 삭제 버튼 표시
-    const currentUserNickname =
-        sessionStorage.getItem('userNickname') || 'Anybody';
     if (post.author === currentUserNickname) {
         document.getElementById('editButton').style.display = 'inline-block';
         document.getElementById('deleteButton').style.display = 'inline-block';
     }
 
     // 댓글 렌더링
-    renderComments(post.comments);
+    renderComments(post.comments, currentUserNickname);
 }
 
 // 댓글 렌더링 함수 (Document Fragment 사용)
-function renderComments(comments) {
+function renderComments(comments, currentUserNickname) {
     const commentsList = document.getElementById('commentsList');
     commentsList.innerHTML = '';
 
@@ -293,8 +309,6 @@ function renderComments(comments) {
         metaRight.classList.add('meta-right');
 
         // 현재 사용자가 작성자인 경우 댓글 수정 및 삭제 버튼 추가
-        const currentUserNickname =
-            sessionStorage.getItem('userNickname') || 'Anybody';
         if (comment.author === currentUserNickname) {
             const editButton = document.createElement('button');
             editButton.classList.add('small', 'simple');
@@ -324,15 +338,29 @@ function renderComments(comments) {
     commentsList.appendChild(fragment);
 }
 
-// 로그아웃 함수
+// logout Startpoint
 function logout() {
-    sessionStorage.removeItem('userNickname');
-    sessionStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userProfileImage');
-    window.location.href = '/login';
+    // 서버로 로그아웃 요청
+    fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.error) {
+                alert('로그아웃되었습니다.');
+                window.location.href = '/login';
+            } else {
+                alert('로그아웃 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('로그아웃 요청 중 오류 발생:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
 }
 
-// 프로필 옵션 드롭다운 함수
+// dropDown function
 function dropdownOptions(event) {
     event.stopPropagation();
     const options = document.getElementById('profileOptions');

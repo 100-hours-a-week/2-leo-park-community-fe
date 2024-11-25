@@ -26,18 +26,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/board';
     });
 
-    const currentUserNickname =
-        sessionStorage.getItem('userNickname') || 'Anybody';
-    const profileImage = sessionStorage.getItem('userProfileImage');
 
-    if (profileImage) {
+    // 게시글 수정 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
+    try {
+        const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include', // 세션 쿠키를 포함하여 전송
+        });
+
+        if (response.status === 401) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const user = await response.json();
+        currentUserNickname = user.nickname;
+        profileImage = user.profileImage;
+
+        // 프로필 이미지 설정 및 이벤트 리스너 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
+        boardProfileImage.addEventListener('click', dropdownOptions);
+    } catch (error) {
+        console.error('사용자 정보를 불러오는 중 오류 발생:', error);
+        alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
+        window.location.href = '/login';
+        return;
     }
-
-    // 프로필 이미지를 클릭하면 dropdownOptions() 함수 실행
-    const boardProfileImage = document.getElementById('boardProfileImage');
-    boardProfileImage.addEventListener('click', dropdownOptions);
 
     // URL에서 게시글 ID 가져오기
     const urlParams = new URLSearchParams(window.location.search);
@@ -51,12 +67,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let post = null;
 
+    // boardEdit Startpoint
     try {
-        const response = await fetch(`/api/posts/${postId}`);
+        const response = await fetch(`/api/posts/${postId}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
         if (!response.ok) {
             throw new Error('게시글을 가져오는 데 실패했습니다.');
         }
         post = await response.json();
+
+        // 현재 로그인한 사용자가 작성자인지 확인(확실한 예방을 위해 추가)
+        if (post.author !== currentUserNickname) {
+            alert('게시글 수정 권한이 없습니다.');
+            window.location.href = '/board';
+            return;
+        }
+
         populateEditForm(post);
     } catch (error) {
         console.error(error);
@@ -109,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // 이미지 파일 처리 (Base64 인코딩)
-        let imageBase64 = null; // 게시글 이미지 초기화
+        let imageBase64 = null; 
         if (postImageInput.files && postImageInput.files[0]) {
             const file = postImageInput.files[0];
             const reader = new FileReader();
@@ -122,16 +150,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     title: postTitle,
                     content: postContent,
                     image: imageBase64,
-                    author: post.author,
-                    date: new Date().toLocaleString('ko-KR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                    }),
                 };
 
                 // 백엔드로 데이터 전송
@@ -140,12 +158,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'user-nickname': currentUserNickname,
                         },
+                        credentials: 'include',
                         body: JSON.stringify(updatedPostData),
                     });
                     if (!response.ok) {
-                        throw new Error('게시글 수정에 실패했습니다.');
+                        throw new Error(errorData.message || '게시글 수정에 실패했습니다.');
                     }
                     const data = await response.json();
                     alert(data.message);
@@ -162,17 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const updatedPostData = {
                 title: postTitle,
                 content: postContent,
-                image: null, // 기존 이미지 유지
-                author: post.author,
-                date: new Date().toLocaleString('ko-KR', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false,
-                }),
+                image: null,
             };
 
             // 백엔드로 데이터 전송
@@ -181,8 +189,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'user-nickname': currentUserNickname,
                     },
+                    credentials: 'include',
                     body: JSON.stringify(updatedPostData),
                 });
                 if (!response.ok) {
@@ -190,24 +198,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 const data = await response.json();
                 alert(data.message);
+                // 수정된 게시글 정보를 사용하여 화면 리디렉션
                 window.location.href = `/boardDetail?id=${data.post.id}`;
             } catch (error) {
                 console.error('Error:', error);
-                alert('게시글 수정 중 오류가 발생했습니다.');
+                alert(error.message || '게시글 수정 중 오류가 발생했습니다.');
             }
         }
     });
 });
 
-// 로그아웃 함수
+
+// logout Startpoint
 function logout() {
-    sessionStorage.removeItem('userNickname');
-    sessionStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userProfileImage');
-    window.location.href = '/login';
+    fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.error) {
+                alert('로그아웃되었습니다.');
+                window.location.href = '/login';
+            } else {
+                alert('로그아웃 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('로그아웃 요청 중 오류 발생:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
 }
 
-// 프로필 옵션 드롭다운 함수
+// dropDown function
 function dropdownOptions(event) {
     event.stopPropagation();
     const options = document.getElementById('profileOptions');

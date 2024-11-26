@@ -1,15 +1,17 @@
 // /backend/routes/api.js
 
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcrypt');
+import express from 'express';
+import bcrypt from 'bcrypt';
 
 // NOTE: 게시글 및 댓글 수정/삭제 엔드포인트에서 작성자 확인을 위한 유틸 함수
-const { isAuthor } = require('../utils/authorization');
+import { isAuthor } from '../utils/authorization.js';
 // NOTE: 게시글 이미지를 추가하고 수정할 때, json body에 게시글 제목하고 내용과 함께 담아 한번에 보내고 싶어서 base64로 인코딩함
-const { saveBase64Image } = require('../utils/base64Encoding');
-// 쿠키, 세션을 활용한 인증/인가 구현을 위한 세션 미들웨서
-const { sessionMiddleware } = require('../utils/sessionMiddleware');
+import { saveBase64Image } from '../utils/base64Encoding.js';
+// NOTE: 쿠키, 세션을 활용한 인증/인가 구현을 위한 세션 미들웨어
+import { sessionMiddleware } from '../utils/sessionMiddleware.js';
+
+
+const router = express.Router();
 
 // 세션 미들웨어 등록
 router.use(sessionMiddleware);
@@ -454,7 +456,7 @@ router.patch('/users/password', async (req, res) => {
     }
 });
 
-module.exports = router;
+
 
 
 
@@ -794,4 +796,4 @@ router.put('/posts/:postId/comments/:commentId', (req, res) => {
 
 
 
-module.exports = router;
+export default router;

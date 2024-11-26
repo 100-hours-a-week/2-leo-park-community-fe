@@ -1,9 +1,13 @@
 // backend/routes/mainRoutes.js
 
-const express = require('express');
+import { fileURLToPath } from 'url';
+import express from 'express';
+import path from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const router = express.Router();
-const path = require('path');
+
 
 router.get('/login', (req, res) => {
     res.sendFile(
@@ -122,4 +126,5 @@ router.get('*', (req, res) => {
     res.status(404).send('페이지를 찾을 수 없습니다.');
 });
 
-module.exports = router;
+
+export default router;

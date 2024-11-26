@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "nodejs test",
   "main": "test1.js",
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

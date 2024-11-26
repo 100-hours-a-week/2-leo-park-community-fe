@@ -1,11 +1,18 @@
 // /backend/server.js
 
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
+import { fileURLToPath } from 'url';
+import express from 'express';
+import path from 'path';
+import cors from 'cors';
+
+// router import
+import apiRoutes from './routes/api.js';
+import mainRoutes from './routes/mainRoutes.js';
 
 // express() 함수를 호출하여 app이라는 객체를 생성, app이라는 객체는 웹서버의 기능을 가지고 있음
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // CORS 설정
 app.use(
@@ -33,9 +40,6 @@ app.use(
     express.static(path.resolve(__dirname, '..', 'frontend', 'src')),
 ); // js & views
 
-// 라우터 임포트
-const apiRoutes = require('./routes/api.js');
-const mainRoutes = require('./routes/mainRoutes.js');
 
 // 라우터 등록
 app.use('/api', apiRoutes); // API 라우터 등록(데이터 처리 및 비지니스 로직 관련 처리 담당)

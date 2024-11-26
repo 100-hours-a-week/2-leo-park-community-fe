@@ -1,6 +1,6 @@
-const session = require('express-session');
+import session from 'express-session';
 
-const sessionMiddleware = session({
+export const sessionMiddleware = session({
     secret: 'your_session_secret_key', // 실제 환경에서는 환경 변수로 관리
     resave: false,
     saveUninitialized: false,
@@ -11,4 +11,3 @@ const sessionMiddleware = session({
     },
 });
 
-module.exports = { sessionMiddleware };

@@ -1,9 +1,9 @@
 // Base64 문자열을 파일로 저장하는 유틸리티 함수
 
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
-function saveBase64Image(base64Image, filename) {
+export function saveBase64Image(base64Image, filename) {
     // Base64 문자열에서 데이터 부분만 추출
     const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -33,4 +33,4 @@ function saveBase64Image(base64Image, filename) {
     return `/public/images/${filename}`;
 }
 
-module.exports = { saveBase64Image };
+

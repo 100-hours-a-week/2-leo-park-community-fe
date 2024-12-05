@@ -78,6 +78,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Lottie 애니메이션 설정
+    const lottieContainer = document.getElementById('lottie-container');
+    const lottieAnimation = document.getElementById('lottie-animation');
+
+    const animation = lottie.loadAnimation({
+        container: lottieAnimation, // 애니메이션이 렌더링될 요소
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: '../animations/animation.json', // 애니메이션 JSON 파일 경로
+    });
+
     // 게시글 작성 완료 버튼 클릭 이벤트
     boardWriteButton.addEventListener('click', async e => {
         e.preventDefault();
@@ -102,7 +114,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 이미지 파일 처리 (Base64 인코딩)
+        // 애니메이션 실행 및 컨테이너 표시
+        lottieContainer.style.display = 'flex';
+        animation.goToAndPlay(0, true);
+
+        // 이미지 파일 처리
         let imageBase64 = null;
         if (imageFile) {
             const reader = new FileReader();
@@ -163,6 +179,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const errorData = await response.json();
                 alert(`게시글 등록 실패: ${errorData.message}`);
             }
+
+            // 게시글 데이터 전송 중 애니메이션 완료 후 숨기기
+            setTimeout(() => {
+                lottieContainer.style.display = 'none';
+            }, 2000);
         }
     });
 });

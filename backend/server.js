@@ -5,11 +5,15 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 
+// utils import
+import runMigrations from './utils/runMigrations.js';
+import runSeeds from './utils/runSeeds.js';
+
 // router import
 import apiRoutes from './routes/api.js';
 import mainRoutes from './routes/mainRoutes.js';
 
-// express() 함수를 호출하여 app이라는 객체를 생성, app이라는 객체는 웹서버의 기능을 가지고 있음
+// express() 호출
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +23,7 @@ app.use(
     cors({
         origin: 'http://localhost:3000',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        allowedHeaders: ['Content-Type', 'user-nickname'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
     }),
 );
 
@@ -45,12 +49,33 @@ app.use(
 app.use('/api', apiRoutes); // API 라우터 등록(데이터 처리 및 비지니스 로직 관련 처리 담당)
 app.use('/', mainRoutes); // 메인 페이지 라우터 등록(정적 페이지 제공 담당)
 
+// 서버 시작
+const startServer = async () => {
+    try {
+        // Migrations 실행
+        console.log('[📦 실행] : Running migrations...');
+        await runMigrations();
 
-app.listen(process.env.PORT || 3000, () =>
-    console.log('[💥 시작] : Server running...'),
-);
+        // Seeds 실행
+        console.log('[🌱 실행] : Running seeds...');
+        await runSeeds();
+
+        // 서버 시작
+        app.listen(process.env.PORT || 3000, () =>
+            console.log('[💥 시작] : Server running...'),
+        );
+    } catch (error) {
+        console.error('[❌ 오류] : 서버 시작 중 오류 발생:', error);
+        process.exit(1); // 오류 발생 시 프로세스 종료
+    }
+};
+
+// 서버 실행
+startServer();
+
+
 // app.listen(process.env.PORT || 3000, () => console.log("Server running...")) 라는 코드는 웹 서버를 실행
 // 환경 변수에 PORT 값이 있으면 그 값을 포트 번호로 사용하고, 없으면 3000번 포트를 사용하겠다는 의미
 // 웹 서버가 실행되면 콘솔에 “Server running…” 이라고 출력
 
-// 여기까지 한 상태에서 터미널 창에 node server.js
+// 여기까지 한 상태에서 터미널 창에 node server.js 입력하고 실행

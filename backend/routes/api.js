@@ -45,7 +45,7 @@ router.patch('/users/password', userController.updatePassword);
 // ============ About posts routes ============ //
 
 // 모든 게시글 목록 조회
-router.get('/posts', postController.getPosts);
+router.get('/posts', postController.getAllPosts);
 
 // 특정 게시글 상세 조회
 router.get('/posts/:id', postController.getPostById);

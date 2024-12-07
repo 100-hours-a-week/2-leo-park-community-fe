@@ -24,7 +24,7 @@ export const getPostById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const post = await Post.getPostById();
+        const post = await Post.getPostById(id);
         if (!post) {
             return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
@@ -47,8 +47,7 @@ export const createPost = async (req, res) => {
     }
 
     const { title, content, image } = req.body;
-    const author = req.session.user.nickname;
-    const authorId = req.session.user.id;
+    const user_id = req.session.user.id;
 
     // 유효성 검사
     if (!title || !content) {
@@ -67,21 +66,19 @@ export const createPost = async (req, res) => {
             imageUrl = saveBase64Image(image, filename);
         }
 
-        const date = formatDate();
-
         const newPost = await Post.createPost({
             title,
             content,
             image: imageUrl,
-            authorId,
-            date,
-            likes,
-            views,
+            user_id,
         });
 
         res.status(201).json({
             message: '게시글이 성공적으로 등록되었습니다.',
-            post: newPost,
+            post: {
+                ...newPost,
+                comments: [],
+            },
         });
     } catch (error) {
         console.error('게시글 생성 중 오류 발생:', error);
@@ -98,45 +95,43 @@ export const updatePost = async (req, res) => {
     }
 
     const { title, content, image } = req.body;
-    const userNickname = req.session.user.nickname;
+    const user_id = req.session.user.id;
 
     try {
-        // 게시글 조회
-        let sql = 'SELECT * FROM posts WHERE id = ?';
-        let [rows] = await pool.query(sql, [id]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+        // 게시글 작성자 확인
+        const postAuthorId = await Post.getPostAuthorById(id);
+        if (!postAuthorId) {
+          return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
-
-        const post = rows[0];
-
-        // 작성자 확인
-        if (post.author !== userNickname) {
-            return res.status(403).json({ message: '게시글 수정 권한이 없습니다.' });
+    
+        if (postAuthorId !== user_id) {
+          return res.status(403).json({ message: '게시글 수정 권한이 없습니다.' });
         }
-
+    
         // 유효성 검사
         if (!title || !content) {
-            return res.status(400).json({ message: '제목과 내용은 필수입니다.' });
+          return res.status(400).json({ message: '제목과 내용은 필수입니다.' });
         }
-
+    
         // 이미지 저장
-        let imageUrl = post.image;
+        let imageUrl = undefined;
         if (image) {
-            const filename = `post_${id}_${Date.now()}.png`;
-            imageUrl = saveBase64Image(image, filename);
+          const filename = `post_${id}_${Date.now()}.png`;
+          imageUrl = saveBase64Image(image, filename);
         }
-
+    
         // 게시글 업데이트
-        sql = 'UPDATE posts SET title = ?, content = ?, image = ?, date = ? WHERE id = ?';
-        await pool.query(sql, [title, content, imageUrl, new Date(), id]);
-
+        await Post.updatePost(id, {
+          title,
+          content,
+          image: imageUrl,
+        });
+    
         res.json({ message: '게시글이 수정되었습니다.' });
-    } catch (error) {
+      } catch (error) {
         console.error('게시글 수정 중 오류 발생:', error);
         res.status(500).json({ message: '게시글 수정 중 오류가 발생했습니다.' });
-    }
+      }
 };
 
 // 게시글 삭제
@@ -147,33 +142,27 @@ export const deletePost = async (req, res) => {
         return res.status(401).json({ message: '로그인이 필요합니다.' });
     }
 
-    const userNickname = req.session.user.nickname;
+    const user_id = req.session.user.id;
 
     try {
-        // 게시글 조회
-        let sql = 'SELECT * FROM posts WHERE id = ?';
-        let [rows] = await pool.query(sql, [id]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+        // 게시글 작성자 확인
+        const postAuthorId = await Post.getPostAuthorById(id);
+        if (!postAuthorId) {
+          return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
-
-        const post = rows[0];
-
-        // 작성자 확인
-        if (post.author !== userNickname) {
-            return res.status(403).json({ message: '게시글 삭제 권한이 없습니다.' });
+    
+        if (postAuthorId !== user_id) {
+          return res.status(403).json({ message: '게시글 삭제 권한이 없습니다.' });
         }
-
-        // 게시글 삭제
-        sql = 'DELETE FROM posts WHERE id = ?';
-        await pool.query(sql, [id]);
-
+    
+        // 게시글 삭제 (논리 삭제)
+        await Post.deletePost(id);
+    
         res.json({ message: '게시글이 삭제되었습니다.' });
-    } catch (error) {
+      } catch (error) {
         console.error('게시글 삭제 중 오류 발생:', error);
         res.status(500).json({ message: '게시글 삭제 중 오류가 발생했습니다.' });
-    }
+      }
 };
 
 // 게시글 조회수 증가
@@ -181,12 +170,7 @@ export const incrementPostViews = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const sql = 'UPDATE posts SET views = views + 1 WHERE id = ?';
-        await pool.query(sql, [id]);
-
-        const [rows] = await pool.query('SELECT views FROM posts WHERE id = ?', [id]);
-        const views = rows[0].views;
-
+        const views = await Post.incrementPostViews(id);
         res.json({ views });
     } catch (error) {
         console.error('조회수 증가 중 오류 발생:', error);
@@ -199,12 +183,7 @@ export const incrementPostLikes = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const sql = 'UPDATE posts SET likes = likes + 1 WHERE id = ?';
-        await pool.query(sql, [id]);
-
-        const [rows] = await pool.query('SELECT likes FROM posts WHERE id = ?', [id]);
-        const likes = rows[0].likes;
-
+        const likes = Post.incrementPostLikes(id);
         res.json({ likes });
     } catch (error) {
         console.error('좋아요 증가 중 오류 발생:', error);
@@ -212,8 +191,8 @@ export const incrementPostLikes = async (req, res) => {
     }
 };
 
-// 댓글 추가
-export const addComment = async (req, res) => {
+// 댓글 생성
+export const createComment = async (req, res) => {
     const { id } = req.params; // 게시글 ID
     const { content } = req.body;
 
@@ -221,19 +200,24 @@ export const addComment = async (req, res) => {
         return res.status(401).json({ message: '로그인이 필요합니다.' });
     }
 
-    const author = req.session.user.nickname;
+    const user_id = req.session.user.id;
 
     if (!content || content.trim() === '') {
         return res.status(400).json({ message: '댓글 내용을 입력해주세요.' });
     }
 
     try {
-        // 댓글 추가
-        const date = formatDate();
-        const sql = 'INSERT INTO comments (postId, author, content, date) VALUES (?, ?, ?, ?)';
-        await pool.query(sql, [id, author, content, date]);
+        // 댓글 생성
+        const newComment = await Comment.createComment({
+            content,
+            user_id,
+            post_id: id,
+        });
 
-        res.status(201).json({ message: '댓글이 추가되었습니다.' });
+        res.status(201).json({
+            message: '댓글이 추가되었습니다.',
+            comment: newComment,
+        });
     } catch (error) {
         console.error('댓글 추가 중 오류 발생:', error);
         res.status(500).json({ message: '댓글 추가 중 오류가 발생했습니다.' });
@@ -248,26 +232,23 @@ export const deleteComment = async (req, res) => {
         return res.status(401).json({ message: '로그인이 필요합니다.' });
     }
 
-    const userNickname = req.session.user.nickname;
+    const user_id = req.session.user.id;
 
     try {
         // 댓글 조회
-        let sql = 'SELECT * FROM comments WHERE id = ? AND postId = ?';
-        let [rows] = await pool.query(sql, [commentId, postId]);
+        const comment = await Comment.getCommentById(commentId);
 
-        if (rows.length === 0) {
+        if (!comment || comment.post_id !== postId) {
             return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
         }
 
-        const comment = rows[0];
-
         // 작성자 확인
-        if (comment.author !== userNickname) {
+        if (comment.user_id !== user_id) {
             return res.status(403).json({ message: '댓글 삭제 권한이 없습니다.' });
         }
 
         // 댓글 삭제
-        await Comment.deleteComment(commentId);
+        await Comment.deleteComment(commentId, postId);
 
         res.json({ message: '댓글이 삭제되었습니다.' });
     } catch (error) {
@@ -285,7 +266,7 @@ export const updateComment = async (req, res) => {
         return res.status(401).json({ message: '로그인이 필요합니다.' });
     }
 
-    const userNickname = req.session.user.nickname;
+    const user_id = req.session.user.id;
 
     if (!content || content.trim() === '') {
         return res.status(400).json({ message: '댓글 내용은 필수입니다.' });
@@ -293,23 +274,19 @@ export const updateComment = async (req, res) => {
 
     try {
         // 댓글 조회
-        let sql = 'SELECT * FROM comments WHERE id = ? AND postId = ?';
-        let [rows] = await pool.query(sql, [commentId, postId]);
+        const comment = await Comment.getCommentById(commentId);
 
-        if (rows.length === 0) {
+        if (!comment || comment.post_id !== postId) {
             return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
         }
 
-        const comment = rows[0];
-
         // 작성자 확인
-        if (comment.author !== userNickname) {
+        if (comment.user_id !== user_id) {
             return res.status(403).json({ message: '댓글 수정 권한이 없습니다.' });
         }
 
         // 댓글 수정
-        sql = 'UPDATE comments SET content = ? WHERE id = ?';
-        await pool.query(sql, [content, commentId]);
+        await Comment.updateComment(commentId, content);
 
         res.json({ message: '댓글이 수정되었습니다.' });
     } catch (error) {

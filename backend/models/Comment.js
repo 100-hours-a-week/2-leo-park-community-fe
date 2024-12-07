@@ -9,84 +9,118 @@ import { uuidToBuffer, bufferToUuid } from '../utils/uuidUtils.js';
 // Comment 모델
 const Comment = {
     // 게시글 ID로 댓글 조회
-    getCommentsByPostId: async (postId) => {
+    getCommentsByPostId: async (post_id) => {
         const [rows] = await pool.query(
-            'SELECT id, content, author, date FROM comments WHERE postId = ? ORDER BY date ASC',
-            [uuidToBuffer(postId)],
+            `
+            SELECT comments.*, users.nickname AS author
+            FROM comments
+            JOIN users ON comments.user_id = users.id
+            WHERE comments.post_id = ?
+            ORDER BY comments.created_at ASC
+            `,
+            [uuidToBuffer(post_id)],
         );
 
         // BINARY -> UUID 변환
         return rows.map((row) => ({
             ...row,
             id: bufferToUuid(row.id),
+            user_id: bufferToUuid(row.user_id),
+            post_id: bufferToUuid(row.post_id),
         }));
     },
 
     // 댓글 생성
-    addComment: async ({ content, author, postId }) => {
-        const connection = await pool.getConnection(); // 연결 객체 가져오기
+    createComment: async ({ content, user_id, post_id }) => {
+        const connection = await pool.getConnection();
         try {
-            await connection.beginTransaction(); // 트랜잭션 시작
-    
-            // 댓글 삽입
+            await connection.beginTransaction();
+
             const id = uuidToBuffer(uuidv4());
-            const date = formatDate();
+            const created_at = formatDate();
+            const userIdBuffer = uuidToBuffer(user_id);
+            const postIdBuffer = uuidToBuffer(post_id);
+
             await connection.query(
-                'INSERT INTO comments (id, content, author, postId, date) VALUES (?, ?, ?, ?, ?)',
-                [id, content, author, uuidToBuffer(postId), date]
+                'INSERT INTO comments (id, content, user_id, post_id, created_at) VALUES (?, ?, ?, ?, ?)',
+                [id, content, userIdBuffer, postIdBuffer, created_at]
             );
-    
-            // comments_count 증가
+
+            // comment_count 증가
             await connection.query(
-                'UPDATE posts SET comments_count = comments_count + 1 WHERE id = ?',
-                [uuidToBuffer(postId)]
+                'UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?',
+                [postIdBuffer]
             );
-    
-            await connection.commit(); // 트랜잭션 커밋
-            return { id: bufferToUuid(id), content, author, postId, date };
+
+            await connection.commit();
+
+            return {
+                id: bufferToUuid(id),
+                content,
+                user_id,
+                post_id,
+                created_at,
+            };
         } catch (error) {
-            await connection.rollback(); // 트랜잭션 롤백
+            await connection.rollback();
             console.error('댓글 작성 중 오류:', error);
             throw error;
         } finally {
-            connection.release(); // 연결 반환
+            connection.release();
         }
     },
 
-
     // 댓글 삭제
-    deleteComment: async (commentId) => {
-        const idBuffer = uuidToBuffer(commentId);
+    deleteComment: async (comment_id, post_id) => {
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
 
-        await pool.query('DELETE FROM comments WHERE id = ?', [idBuffer]);
+            const commentIdBuffer = uuidToBuffer(comment_id);
+            const postIdBuffer = uuidToBuffer(post_id);
 
-        return { id: commentId };
+            // 댓글 삭제
+            await connection.query('DELETE FROM comments WHERE id = ?', [commentIdBuffer]);
+
+            // comment_count 감소
+            await connection.query(
+                'UPDATE posts SET comment_count = comment_count - 1 WHERE id = ?',
+                [postIdBuffer]
+            );
+
+            await connection.commit();
+
+            return { id: comment_id };
+        } catch (error) {
+            await connection.rollback();
+            console.error('댓글 삭제 중 오류:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
     },
 
-
     // 댓글 수정
-    updateComment: async (commentId, content) => {
-        const idBuffer = uuidToBuffer(commentId);
+    updateComment: async (comment_id, content) => {
+        const idBuffer = uuidToBuffer(comment_id);
 
         await pool.query(
-            'UPDATE comments SET content = ? WHERE id = ?',
-            [content, idBuffer],
+            'UPDATE comments SET content = ?, updated_at = ? WHERE id = ?',
+            [content, formatDate(), idBuffer],
         );
 
         return {
-            id: commentId,
+            id: comment_id,
             content,
         };
     },
 
-
-
     // 특정 댓글 조회
-    getCommentById: async (commentId) => {
-        const idBuffer = uuidToBuffer(commentId);
+    getCommentById: async (comment_id) => {
+        const idBuffer = uuidToBuffer(comment_id);
 
         const [rows] = await pool.query(
-            'SELECT id, content, author, postId, date FROM comments WHERE id = ?',
+            'SELECT * FROM comments WHERE id = ?',
             [idBuffer],
         );
 
@@ -96,7 +130,8 @@ const Comment = {
         return {
             ...comment,
             id: bufferToUuid(comment.id),
-            postId: bufferToUuid(comment.postId),
+            user_id: bufferToUuid(comment.user_id),
+            post_id: bufferToUuid(comment.post_id),
         };
     },
 };

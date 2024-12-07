@@ -7,76 +7,88 @@ import { uuidToBuffer, bufferToUuid } from '../utils/uuidUtils.js';
 
 
 const User = {
-  createUser: async ({ email, password, nickname, profileImage }) => {
-    const id = uuidToBuffer(uuidv4());
-    const passwordHash = await bcrypt.hash(password, 10);
+    createUser: async ({ email, password, nickname, profile_image }) => {
+        const id = uuidToBuffer(uuidv4());
+        const password_hash = await bcrypt.hash(password, 10);
 
-    const sql =
-      'INSERT INTO users (id, email, passwordHash, nickname, profileImage) VALUES (?, ?, ?, ?, ?)';
-    await pool.query(sql, [id, email, passwordHash, nickname, profileImage]);
+        const sql =
+            'INSERT INTO users (id, email, password_hash, nickname, profile_image) VALUES (?, ?, ?, ?, ?)';
+        await pool.query(sql, [id, email, password_hash, nickname, profile_image]);
 
-    return { id: bufferToUuid(id), email, nickname, profileImage };
-  },
+        return { id: bufferToUuid(id), email, nickname, profile_image };
+    },
 
-  getUserByEmail: async (email) => {
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    const [rows] = await pool.query(sql, [email]);
+    getUserByEmail: async (email) => {
+        const sql = 'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL';
+        const [rows] = await pool.query(sql, [email]);
 
-    if (rows.length === 0) return null;
+        if (rows.length === 0) return null;
 
-    const user = rows[0];
-    user.id = bufferToUuid(user.id);
-    return user;
-  },
+        const user = rows[0];
+        user.id = bufferToUuid(user.id);
+        return user;
+    },
 
-  getUserById: async (id) => {
-    const idBuffer = uuidToBuffer(id);
-    const sql = 'SELECT * FROM users WHERE id = ?';
-    const [rows] = await pool.query(sql, [idBuffer]);
+    getUserByNickname: async (nickname) => {
+        const sql = 'SELECT * FROM users WHERE nickname = ? AND deleted_at IS NULL';
+        const [rows] = await pool.query(sql, [nickname]);
 
-    if (rows.length === 0) return null;
+        if (rows.length === 0) return null;
 
-    const user = rows[0];
-    user.id = bufferToUuid(user.id);
-    return user;
-  },
+        const user = rows[0];
+        user.id = bufferToUuid(user.id);
+        return user;
+    },
 
-  updateUser: async (id, data) => {
-    const idBuffer = uuidToBuffer(id);
-    const fields = [];
-    const values = [];
 
-    if (data.nickname) {
-      fields.push('nickname = ?');
-      values.push(data.nickname);
-    }
-    if (data.profileImage) {
-      fields.push('profileImage = ?');
-      values.push(data.profileImage);
-    }
-    if (fields.length === 0) return;
+    getUserById: async (id) => {
+        const id_buffer = uuidToBuffer(id);
+        const sql = 'SELECT * FROM users WHERE id = ? AND deleted_at IS NULL';
+        const [rows] = await pool.query(sql, [id_buffer]);
 
-    const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-    values.push(idBuffer);
+        if (rows.length === 0) return null;
 
-    await pool.query(sql, values);
-  },
+        const user = rows[0];
+        user.id = bufferToUuid(user.id);
+        return user;
+    },
 
-  deleteUser: async (id) => {
-    const idBuffer = uuidToBuffer(id);
-    const sql = 'DELETE FROM users WHERE id = ?';
-    await pool.query(sql, [idBuffer]);
-  },
+    updateUser: async (id, data) => {
+        const id_buffer = uuidToBuffer(id);
+        const fields = [];
+        const values = [];
 
-  verifyPassword: async (email, password) => {
-    const user = await User.getUserByEmail(email);
-    if (!user) return null;
+        if (data.nickname) {
+            fields.push('nickname = ?');
+            values.push(data.nickname);
+        }
+        if (data.profile_image) {
+            fields.push('profile_image = ?');
+            values.push(data.profile_image);
+        }
+        if (fields.length === 0) return;
 
-    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordMatch) return null;
+        const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
+        values.push(id_buffer);
 
-    return user;
-  },
+        await pool.query(sql, values);
+    },
+
+    deleteUser: async (id) => {
+        const id_buffer = uuidToBuffer(id);
+        const sql = 'UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL';
+        await pool.query(sql, [id_buffer]);
+    },
+
+    verifyPassword: async (email, password) => {
+        const user = await User.getUserByEmail(email);
+        if (!user) return null;
+
+        const password_match = await bcrypt.compare(password, user.password_hash);
+        if (!password_match) return null;
+
+        return user;
+    },
 };
 
 export default User;

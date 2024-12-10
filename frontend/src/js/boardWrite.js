@@ -1,5 +1,8 @@
 // /src/js/boardWrite.js
 
+import { dropdownOptions } from '../utils/dropDown.js';
+import { logout } from '../utils/logout.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const postTitleInput = document.getElementById('postTitle');
     const postContentInput = document.getElementById('postContent');
@@ -45,12 +48,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const user = await response.json();
         currentUserNickname = user.nickname;
-        profileImage = user.profileImage;
+        profileImage = user.profile_image;
 
         // 프로필 이미지 설정 및 이벤트 리스너 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profileImage;
-        boardProfileImage.addEventListener('click', dropdownOptions);
+        boardProfileImage.src = profile_image;
+        boardProfileImage.addEventListener('click', (event) => {
+            dropdownOptions(event, '#boardProfileImage', '#profileOptions');
+        });
     } catch (error) {
         console.error('사용자 정보를 불러오는 중 오류 발생:', error);
         alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
@@ -188,46 +193,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-
-// logout Startpoint
-function logout() {
-    // 서버로 로그아웃 요청
-    fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (!result.error) {
-                alert('로그아웃되었습니다.');
-                window.location.href = '/login';
-            } else {
-                alert('로그아웃 중 오류가 발생했습니다.');
-            }
-        })
-        .catch(error => {
-            console.error('로그아웃 요청 중 오류 발생:', error);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        });
-}
-
-
-// dropDown function
-function dropdownOptions(event) {
-    event.stopPropagation();
-    const options = document.getElementById('profileOptions');
-    options.style.display = options.style.display === 'none' ? 'block' : 'none';
-
-    // 다른 곳을 클릭하면 옵션 메뉴가 닫히도록 이벤트 리스너 추가
-    document.addEventListener('click', function closeOptions(e) {
-        if (
-            !e.target.closest('#profileOptions') &&
-            !e.target.closest('#boardProfileImage')
-        ) {
-            options.style.display = 'none';
-            document.removeEventListener('click', closeOptions);
-        }
-    });
-}
 
 

@@ -9,16 +9,16 @@ const Post = {
     // 모든 게시글 목록 조회
     getAllPosts: async () => {
         const [rows] = await pool.query(`
-        SELECT posts.*, users.nickname AS author
-        FROM posts
-        JOIN users ON posts.user_id = users.id
-        WHERE posts.deleted_at IS NULL
-        ORDER BY posts.date DESC
-      `);
+            SELECT posts.*, users.nickname AS author
+            FROM posts
+            JOIN users ON posts.user_id = users.id
+            WHERE posts.deleted_at IS NULL
+            ORDER BY posts.created_at DESC
+        `);
         return rows.map(post => ({
             ...post,
             id: bufferToUuid(post.id),
-            authorId: bufferToUuid(post.user_id),
+            author: post.author,
         }));
     },
 
@@ -27,11 +27,11 @@ const Post = {
         const idBuffer = uuidToBuffer(id);
         const [rows] = await pool.query(
             `
-        SELECT posts.*, users.nickname AS author
-        FROM posts
-        JOIN users ON posts.user_id = users.id
-        WHERE posts.id = ? AND posts.deleted_at IS NULL
-        `,
+            SELECT posts.*, users.nickname AS author
+            FROM posts
+            JOIN users ON posts.user_id = users.id
+            WHERE posts.id = ? AND posts.deleted_at IS NULL
+            `,
             [idBuffer],
         );
 
@@ -47,11 +47,12 @@ const Post = {
     createPost: async ({ title, content, image, user_id }) => {
         const id = uuidToBuffer(uuidv4());
         const userIdBuffer = uuidToBuffer(user_id);
-        const createdAt = formatDate();
+        // DB에서 created_at, updated_at 기본값 처리 가능하므로 직접 설정 불필요
+        // 필요 시 formatDate()로 설정 가능
 
         await pool.query(
-            'INSERT INTO posts (id, title, content, image, user_id, created_at, likes, views, comment_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, title, content, image, userIdBuffer, createdAt, 0, 0, 0],
+            'INSERT INTO posts (id, title, content, image, user_id, likes, views, comment_count) VALUES (?, ?, ?, ?, ?, 0, 0, 0)',
+            [id, title, content, image, userIdBuffer],
         );
 
         return {
@@ -60,7 +61,6 @@ const Post = {
             content,
             image,
             user_id,
-            created_at: createdAt,
             likes: 0,
             views: 0,
             comment_count: 0,
@@ -87,27 +87,28 @@ const Post = {
         }
         if (fields.length === 0) return;
 
-        fields.push('updated_at = ?');
-        values.push(formatDate());
+        // updated_at은 ON UPDATE CURRENT_TIMESTAMP로 자동 변경되지만
+        // 필요하다면 수동 업데이트 가능
+        // fields.push('updated_at = ?');
+        // values.push(formatDate());
 
-        const sql = `UPDATE posts SET ${fields.join(', ')} WHERE id = ?`;
+        const sql = `UPDATE posts SET ${fields.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
         values.push(idBuffer);
 
         await pool.query(sql, values);
     },
 
-
     // 게시글 삭제 (논리 삭제)
     deletePost: async (id) => {
         const idBuffer = uuidToBuffer(id);
-        const sql = 'UPDATE posts SET deleted_at = ? WHERE id = ?';
+        const sql = 'UPDATE posts SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL';
         await pool.query(sql, [formatDate(), idBuffer]);
     },
 
     // 게시글 작성자 확인
     getPostAuthorById: async (id) => {
         const idBuffer = uuidToBuffer(id);
-        const [rows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [idBuffer]);
+        const [rows] = await pool.query('SELECT user_id FROM posts WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
         if (rows.length === 0) return null;
         return bufferToUuid(rows[0].user_id);
     },
@@ -115,46 +116,43 @@ const Post = {
     // 게시글 조회수 증가
     incrementPostViews: async (id) => {
         const idBuffer = uuidToBuffer(id);
-        const connection = await pool.getConnection(); // connection 생성
+        const connection = await pool.getConnection();
         try {
-            await connection.beginTransaction(); // 트랜잭션 시작
+            await connection.beginTransaction();
 
-            // 조회수 증가
-            await connection.query('UPDATE posts SET views = views + 1 WHERE id = ?', [idBuffer]);
+            // 조회수 증가 (논리 삭제된 게시글에는 영향 없음)
+            await connection.query('UPDATE posts SET views = views + 1 WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
 
-            // 조회수 반환
             const [rows] = await connection.query('SELECT views FROM posts WHERE id = ?', [idBuffer]);
 
-            await connection.commit(); // 트랜잭션 커밋
+            await connection.commit();
             return rows[0].views;
         } catch (error) {
-            await connection.rollback(); // 에러 발생 시 롤백
+            await connection.rollback();
             throw error;
         } finally {
-            connection.release(); // 연결 해제
+            connection.release();
         }
     },
 
     // 게시글 좋아요 증가
     incrementPostLikes: async (id) => {
         const idBuffer = uuidToBuffer(id);
-        const connection = await pool.getConnection(); // connection 생성
+        const connection = await pool.getConnection();
         try {
-            await connection.beginTransaction(); // 트랜잭션 시작
+            await connection.beginTransaction();
 
-            // 좋아요 증가
-            await connection.query('UPDATE posts SET likes = likes + 1 WHERE id = ?', [idBuffer]);
+            await connection.query('UPDATE posts SET likes = likes + 1 WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
 
-            // 좋아요 반환
             const [rows] = await connection.query('SELECT likes FROM posts WHERE id = ?', [idBuffer]);
 
-            await connection.commit(); // 트랜잭션 커밋
+            await connection.commit();
             return rows[0].likes;
         } catch (error) {
-            await connection.rollback(); // 에러 발생 시 롤백
+            await connection.rollback();
             throw error;
         } finally {
-            connection.release(); // 연결 해제
+            connection.release();
         }
     },
 };

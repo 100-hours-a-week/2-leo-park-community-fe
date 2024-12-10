@@ -1,32 +1,43 @@
-// backend/utils/runMigrations.js
-
+// /backend/utils/runMigrations.js
+import fs from 'fs';
+import path from 'path';
 import pool from '../database/db.js';
+import { fileURLToPath } from 'url';
 
-const tableExists = async (tableName) => {
-  const [rows] = await pool.query(
-    `SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?`,
-    [tableName],
-  );
-  return rows[0].count > 0;
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const runMigrations = async () => {
-  if (await tableExists('posts')) {
-    console.log('Tables already exist. Skipping migrations...');
+  const migrationsDir = path.join(__dirname, '..', 'database', 'migrations');
+
+  // 마이그레이션 파일 목록 읽기
+  const files = fs.readdirSync(migrationsDir)
+    .filter(file => file.endsWith('.sql'))
+    .sort((a, b) => {
+      const order = ['users', 'posts', 'comments']; 
+      const indexA = order.findIndex(name => a.includes(name));
+      const indexB = order.findIndex(name => b.includes(name));
+      return indexA - indexB;
+    });
+
+  if (files.length === 0) {
+    console.log('No migration files found. Skipping migrations.');
     return;
   }
 
-  // 테이블 생성 마이그레이션 실행
-  await pool.query(`
-    CREATE TABLE posts (
-      id BINARY(16) PRIMARY KEY,
-      title VARCHAR(255),
-      content TEXT,
-      authorId BINARY(16),
-      date TIMESTAMP,
-      likes INT DEFAULT 0,
-      views INT DEFAULT 0
-    );
-  `);
-  console.log('Migrations completed.');
+  console.log('[📦 실행]: Running migrations...');
+  for (const file of files) {
+    const filePath = path.join(migrationsDir, file);
+    const sql = fs.readFileSync(filePath, 'utf8');
+    try {
+      await pool.query(sql);
+      console.log(`Migration executed: ${file}`);
+    } catch (error) {
+      console.error(`Error executing migration (${file}):`, error);
+      throw error;
+    }
+  }
+  console.log('All migrations completed.');
 };
+
+export default runMigrations;

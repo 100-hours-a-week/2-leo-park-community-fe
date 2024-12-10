@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user) {
                 // 사용자 정보를 사용하여 페이지에 표시
                 const boardProfileImage = document.getElementById('boardProfileImage');
-                if (user.profileImage) {
-                    boardProfileImage.src = user.profileImage;
+                if (user.profile_image) {
+                    boardProfileImage.src = user.profile_image;
                 } else {
                     boardProfileImage.src = '/public/images/default-profile.png';
                 }
@@ -104,7 +104,7 @@ async function loadPosts() {
             // 좋아요, 댓글, 조회수
             const metaItems = [
                 { label: '좋아요', count: post.likes },
-                { label: '댓글', count: post.comments.length },
+                { label: '댓글', count: post.comment_count },
                 { label: '조회수', count: post.views },
             ];
 

@@ -2,9 +2,9 @@
 
 CREATE TABLE IF NOT EXISTS users (
   id BINARY(16) PRIMARY KEY,
-  email VARCHAR(255) NOT NULL CONSTRAINT unique_email UNIQUE CHECK (email LIKE '%@%.%'),
+  email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  nickname VARCHAR(50) NOT NULL CONSTRAINT unique_nickname UNIQUE CHECK (LENGTH(nickname) > 1),
+  nickname VARCHAR(50) NOT NULL UNIQUE,
   profile_image VARCHAR(255) DEFAULT '/public/images/default-profile.png',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

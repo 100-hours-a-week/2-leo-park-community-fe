@@ -52,23 +52,21 @@ app.use('/', mainRoutes); // 메인 페이지 라우터 등록(정적 페이지 
 // 서버 시작
 const startServer = async () => {
     try {
-        // Migrations 실행
-        console.log('[📦 실행] : Running migrations...');
-        await runMigrations();
-
-        // Seeds 실행
-        console.log('[🌱 실행] : Running seeds...');
-        await runSeeds();
-
-        // 서버 시작
-        app.listen(process.env.PORT || 3000, () =>
-            console.log('[💥 시작] : Server running...'),
-        );
+      // 마이그레이션 실행
+      await runMigrations();
+  
+      // 시드 실행
+      await runSeeds();
+  
+      const port = process.env.PORT || 3000;
+      app.listen(port, () => {
+        console.log(`[💥 시작] : Server running on port ${port}...`);
+      });
     } catch (error) {
-        console.error('[❌ 오류] : 서버 시작 중 오류 발생:', error);
-        process.exit(1); // 오류 발생 시 프로세스 종료
+      console.error('[❌ 오류] : 서버 시작 중 오류 발생:', error);
+      process.exit(1);
     }
-};
+  };
 
 // 서버 실행
 startServer();

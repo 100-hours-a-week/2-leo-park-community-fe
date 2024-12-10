@@ -1,8 +1,12 @@
 // /backend/controllers/userController.js
 
-import bcrypt from 'bcrypt';
+// NOTE: 게시글 및 댓글 수정/삭제 엔드포인트에서 작성자 확인을 위한 유틸 함수
+import { isAuthor } from '../utils/authorization.js';
+// NOTE: 게시글 이미지를 추가하고 수정할 때, json body에 게시글 제목하고 내용과 함께 담아 한번에 보내고 싶어서 base64로 인코딩함
 import { saveBase64Image } from '../utils/base64Encoding.js';
-import { v4 as uuidv4 } from 'uuid';
+
+import bcrypt from 'bcrypt';
+
 import User from '../models/User.js';
 
 // 로그인

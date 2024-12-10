@@ -15,13 +15,12 @@ const Comment = {
             SELECT comments.*, users.nickname AS author
             FROM comments
             JOIN users ON comments.user_id = users.id
-            WHERE comments.post_id = ?
+            WHERE comments.post_id = ? AND comments.deleted_at IS NULL
             ORDER BY comments.created_at ASC
             `,
             [uuidToBuffer(post_id)],
         );
 
-        // BINARY -> UUID 변환
         return rows.map((row) => ({
             ...row,
             id: bufferToUuid(row.id),
@@ -48,7 +47,7 @@ const Comment = {
 
             // comment_count 증가
             await connection.query(
-                'UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?',
+                'UPDATE posts SET comment_count = comment_count + 1 WHERE id = ? AND deleted_at IS NULL',
                 [postIdBuffer]
             );
 
@@ -70,7 +69,7 @@ const Comment = {
         }
     },
 
-    // 댓글 삭제
+    // 댓글 삭제 (논리 삭제)
     deleteComment: async (comment_id, post_id) => {
         const connection = await pool.getConnection();
         try {
@@ -79,12 +78,13 @@ const Comment = {
             const commentIdBuffer = uuidToBuffer(comment_id);
             const postIdBuffer = uuidToBuffer(post_id);
 
-            // 댓글 삭제
-            await connection.query('DELETE FROM comments WHERE id = ?', [commentIdBuffer]);
+            // 실제 DELETE 대신 논리 삭제
+            await connection.query('UPDATE comments SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL',
+                [formatDate(), commentIdBuffer]);
 
             // comment_count 감소
             await connection.query(
-                'UPDATE posts SET comment_count = comment_count - 1 WHERE id = ?',
+                'UPDATE posts SET comment_count = comment_count - 1 WHERE id = ? AND deleted_at IS NULL',
                 [postIdBuffer]
             );
 
@@ -105,7 +105,7 @@ const Comment = {
         const idBuffer = uuidToBuffer(comment_id);
 
         await pool.query(
-            'UPDATE comments SET content = ?, updated_at = ? WHERE id = ?',
+            'UPDATE comments SET content = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
             [content, formatDate(), idBuffer],
         );
 
@@ -120,7 +120,7 @@ const Comment = {
         const idBuffer = uuidToBuffer(comment_id);
 
         const [rows] = await pool.query(
-            'SELECT * FROM comments WHERE id = ?',
+            'SELECT * FROM comments WHERE id = ? AND deleted_at IS NULL',
             [idBuffer],
         );
 

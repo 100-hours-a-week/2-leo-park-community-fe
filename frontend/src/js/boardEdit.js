@@ -1,7 +1,7 @@
 // /src/js/boardEdit.js
 
-import { dropdownOptions } from '../utils/dropDown.js';
-import { logout } from '../utils/logout.js';
+import { dropdownOptions } from '../../utils/dropDown.js';
+import { logout } from '../../utils/logout.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const nicknameEditButton = document.getElementById('nicknameEditButton');
@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/board';
     });
 
+    let currentUserEmail;
+    let currentUserNickname;
+    let profileImage;
 
     // 게시글 수정 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
@@ -37,26 +40,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
 
-        if (response.status === 401) {
-            alert('로그인이 필요합니다.');
-            window.location.href = '/login';
-            return;
+        if (!response.ok) {
+            if (response.status === 401) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('사용자 정보를 가져오는 데 실패했습니다.');
         }
 
+        console.log('user 응답 받기 전'); // 디버깅
         const user = await response.json();
+        console.log('user 응답 받은 후'); // 디버깅
+
+        currentUserEmail = user.email;
         currentUserNickname = user.nickname;
         profileImage = user.profile_image;
 
-        // 프로필 이미지 설정 및 이벤트 리스너 추가
+        console.log('user:', user); // debug
+
+
+        // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profile_image;
+        boardProfileImage.src = profileImage;
+        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });
     } catch (error) {
         console.error('사용자 정보를 불러오는 중 오류 발생:', error);
         alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
-        window.location.href = '/login';
+        window.location.href = '/board';
         return;
     }
 
@@ -70,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    let post = null;
+    let post;
 
     // boardEdit Startpoint
     try {
@@ -171,8 +185,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         throw new Error(errorData.message || '게시글 수정에 실패했습니다.');
                     }
                     const data = await response.json();
+                    console.log('data:', data); // 디버깅
                     alert(data.message);
-                    window.location.href = `/boardDetail?id=${data.post.id}`;
+                    window.location.href = `/boardDetail?id=${postId}`;
                 } catch (error) {
                     console.error('Error:', error);
                     alert('게시글 수정 중 오류가 발생했습니다.');
@@ -202,9 +217,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     throw new Error('게시글 수정에 실패했습니다.');
                 }
                 const data = await response.json();
+                console.log('data:', data); // 디버깅
                 alert(data.message);
                 // 수정된 게시글 정보를 사용하여 화면 리디렉션
-                window.location.href = `/boardDetail?id=${data.post.id}`;
+                window.location.href = `/boardDetail?id=${postId}`;
             } catch (error) {
                 console.error('Error:', error);
                 alert(error.message || '게시글 수정 중 오류가 발생했습니다.');

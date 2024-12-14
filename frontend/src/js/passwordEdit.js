@@ -1,5 +1,8 @@
 // /src/js/passwordEdit.js
 
+import { dropdownOptions } from '../../utils/dropDown.js';
+import { logout } from '../../utils/logout.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const nicknameEditButton = document.getElementById('nicknameEditButton');
     const passwordEditButton = document.getElementById('passwordEditButton');
@@ -9,34 +12,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const editDoneButton = document.getElementById('editDoneButton');
     const passwordError = document.getElementById('passwordError');
     const passwordAgainError = document.getElementById('passwordAgainError');
-
-    // 회원정보수정(닉네임) 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
-    try {
-        const response = await fetch('/api/user/profile', {
-            method: 'GET',
-            credentials: 'include',
-        });
-
-        if (response.status === 401) {
-            alert('로그인이 필요합니다.');
-            window.location.href = '/login';
-            return;
-        }
-
-        const user = await response.json();
-        currentUserEmail = user.email;
-        currentUserNickname = user.nickname;
-        profileImage = user.profileImage;
-
-        const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profileImage;
-        boardProfileImage.addEventListener('click', dropdownOptions);
-    } catch (error) {
-        console.error('사용자 정보를 불러오는 중 오류 발생:', error);
-        alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
-        window.location.href = '/login';
-        return;
-    }
 
     nicknameEditButton.addEventListener('click', e => {
         e.preventDefault();
@@ -52,6 +27,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         logout();
     });
+
+    let currentUserEmail;
+    let currentUserNickname;
+    let profileImage;
+
+    // 회원정보수정(닉네임) 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
+    try {
+        const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include', // 세션 쿠키를 포함하여 전송
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('사용자 정보를 가져오는 데 실패했습니다.');
+        }
+
+        const user = await response.json();
+        console.log('user:', user); // debug
+
+        currentUserEmail = user.email;
+        currentUserNickname = user.nickname;
+        profileImage = user.profile_image;
+
+        // 프로필 이미지에 드롭다운 옵션 추가
+        const boardProfileImage = document.getElementById('boardProfileImage');
+        boardProfileImage.src = profileImage;
+        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
+        boardProfileImage.addEventListener('click', (event) => {
+            dropdownOptions(event, '#boardProfileImage', '#profileOptions');
+        });
+    } catch (error) {
+        console.error('사용자 정보를 불러오는 중 오류 발생:', error);
+        alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
+        window.location.href = '/board';
+        return;
+    }
+
 
     editDoneButton.addEventListener('click', async e => {
         e.preventDefault();
@@ -99,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    newPassword: editedPassword,
+                    new_password: editedPassword,
                 }),
             });
 
@@ -118,43 +135,3 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 });
 
-
-// logout Startpoint
-function logout() {
-    fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (!result.error) {
-                alert('로그아웃되었습니다.');
-                window.location.href = '/login';
-            } else {
-                alert('로그아웃 중 오류가 발생했습니다.');
-            }
-        })
-        .catch(error => {
-            console.error('로그아웃 요청 중 오류 발생:', error);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        });
-}
-
-
-// dropDown function
-function dropdownOptions(event) {
-    event.stopPropagation();
-    const options = document.getElementById('profileOptions');
-    options.style.display = options.style.display === 'none' ? 'block' : 'none';
-
-    // 다른 곳을 클릭하면 옵션 메뉴가 닫히도록 이벤트 리스너 추가
-    document.addEventListener('click', function closeOptions(e) {
-        if (
-            !e.target.closest('#profileOptions') &&
-            !e.target.closest('#boardProfileImage')
-        ) {
-            options.style.display = 'none';
-            document.removeEventListener('click', closeOptions);
-        }
-    });
-}

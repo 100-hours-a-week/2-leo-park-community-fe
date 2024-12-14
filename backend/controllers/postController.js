@@ -115,7 +115,7 @@ export const updatePost = async (req, res) => {
         }
     
         // 이미지 저장
-        let imageUrl = undefined;
+        let imageUrl;
         if (image) {
           const filename = `post_${id}_${Date.now()}.png`;
           imageUrl = saveBase64Image(image, filename);

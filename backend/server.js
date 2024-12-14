@@ -28,10 +28,10 @@ app.use(
 );
 
 // JSON 바디 파싱을 위해 미들웨어 설정 (application/json)
-app.use(express.json());
+app.use(express.json( { limit: '30mb' } ));
 
 // URL-인코딩된 바디 파싱을 위한 미들웨어 설정 (application/x-www-form-urlencoded)
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 // 정적 파일 제공 경로
 // /public으로 시작하는 요청에 대해 /frontend/public 폴더 안에 있는 정적 리소스를 제공하겠다는 의미
@@ -43,6 +43,10 @@ app.use(
     '/src',
     express.static(path.resolve(__dirname, '..', 'frontend', 'src')),
 ); // js & views
+app.use(
+    '/utils',
+    express.static(path.resolve(__dirname, '..', 'frontend', 'utils')),
+); // utils
 
 
 // 라우터 등록

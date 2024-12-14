@@ -266,7 +266,11 @@ export const updateAccount = async (req, res) => {
     }
 
     if (Object.keys(update_data).length === 0) {
-      return res.status(400).json({ message: '변경할 내용이 없습니다.' });
+      return res.status(200).json({
+        message: '변경 내용이 없습니다. 기존 정보를 유지합니다.',
+        updatedNickname: req.session.user.nickname,
+        updatedProfileImage: req.session.user.profile_image,
+      });
     }
 
     await User.updateUser(user_id, update_data);
@@ -317,8 +321,7 @@ export const updatePassword = async (req, res) => {
 
     // 비밀번호 업데이트
     const hashed_password = await bcrypt.hash(new_password, 10);
-    const sql = 'UPDATE users SET password_hash = ? WHERE id = ? AND deleted_at IS NULL';
-    await pool.query(sql, [hashed_password, uuidToBuffer(user_id)]);
+    await User.updatePassword(user_id, hashed_password);
 
     // 세션 무효화 및 로그아웃 처리
     req.session.destroy(err => {

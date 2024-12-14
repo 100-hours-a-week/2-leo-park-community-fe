@@ -1,7 +1,8 @@
 // /src/js/boardDetail.js
 
-import { dropdownOptions } from '../utils/dropDown.js';
-import { logout } from '../utils/logout.js';
+import { dropdownOptions } from '../../utils/dropDown.js';
+import { logout } from '../../utils/logout.js';
+import { formatDate } from '../../utils/dateFormatter.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const nicknameEditButton = document.getElementById('nicknameEditButton');
@@ -38,6 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = `/boardEdit?id=${postId}`;
     });
 
+    let currentUserEmail;
+    let currentUserNickname;
+    let profileImage;
+
     // 게시글 상세조회 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
         const response = await fetch('/api/user/profile', {
@@ -45,35 +50,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
 
-        if (response.status === 401) {
-            alert('로그인이 필요합니다.');
-            window.location.href = '/login';
-            return;
+        if (!response.ok) {
+            if (response.status === 401) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('사용자 정보를 가져오는 데 실패했습니다.');
         }
 
+        console.log('user 응답 받기 전'); // 디버깅
         const user = await response.json();
+        console.log('user 응답 받은 후'); // 디버깅
+
         currentUserEmail = user.email;
         currentUserNickname = user.nickname;
         profileImage = user.profile_image;
 
-        // 프로필 이미지 설정 및 이벤트 리스너 추가
+        console.log('user:', user); // debug
+
+
+        // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profile_image;
+        boardProfileImage.src = profileImage;
+        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });
     } catch (error) {
         console.error('사용자 정보를 불러오는 중 오류 발생:', error);
         alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
-        window.location.href = '/login';
+        window.location.href = '/board';
         return;
     }
 
     // NOTE: URL에서 게시글 ID 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
+    console.log('postId:', postId); // debug
 
-    let selectedPost = null;
+    let selectedPost;
 
     // boardDetail Startpoint
     try {
@@ -85,6 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('게시글을 가져오는 데 실패했습니다.');
         }
         selectedPost = await response.json();
+        console.log('selectedPost:', selectedPost); // debug
 
         // boardDetail views Startpoint
         await fetch(`/api/posts/${postId}/views`, { method: 'POST' });
@@ -120,15 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const newComment = {
             content: commentContent,
-            date: new Date().toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-            }),
+            date: formatDate(),
         };
 
         try {
@@ -151,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    
+
 
     // boardDetail post delete Startpoint
     // TODO: 게시글 삭제 시 삭제 확인 모달창을 통해 사용자가 확인할 수 있도록 하는 인터페이스 추가
@@ -245,14 +254,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
 
-    
+
 });
 
 // 게시글 정보 표시 함수
 function displayPost(post, currentUserNickname) {
     document.getElementById('postTitle').innerText = post.title;
     document.getElementById('postAuthor').innerText = `작성자: ${post.author}`;
-    document.getElementById('postDate').innerText = `작성일: ${post.date}`;
+    document.getElementById('postDate').innerText = `작성일: ${post.updated_at}`;
     document.getElementById('postContent').innerHTML = post.content;
     document.getElementById('likeCount').innerText = post.likes;
     document.getElementById('commentsCount').innerText = post.comments.length;
@@ -304,7 +313,7 @@ function renderComments(comments, currentUserNickname) {
         authorSpan.textContent = comment.author;
 
         const dateSpan = document.createElement('span');
-        dateSpan.textContent = comment.date;
+        dateSpan.textContent = comment.updated_at;
 
         metaLeft.appendChild(authorSpan);
         metaLeft.appendChild(dateSpan);

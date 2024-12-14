@@ -1,7 +1,7 @@
-// /src/js/boardWrite.js
+// frontend/src/js/boardWrite.js
 
-import { dropdownOptions } from '../utils/dropDown.js';
-import { logout } from '../utils/logout.js';
+import { dropdownOptions } from '../../utils/dropDown.js';
+import { logout } from '../../utils/logout.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const postTitleInput = document.getElementById('postTitle');
@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const passwordEditButton = document.getElementById('passwordEditButton');
     const logoutButton = document.getElementById('logoutButton');
     const backButton = document.getElementById('backButton');
+    const lottieContainer = document.getElementById('lottie-container');
+    const lottieAnimation = document.getElementById('lottie-animation');
 
     nicknameEditButton.addEventListener('click', e => {
         e.preventDefault();
@@ -33,6 +35,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/board';
     });
 
+    let currentUserEmail;
+    let currentUserNickname;
+    let profileImage;
+
     // 게시글 추가 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
         const response = await fetch('/api/user/profile', {
@@ -40,26 +46,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
 
-        if (response.status === 401) {
-            alert('로그인이 필요합니다.');
-            window.location.href = '/login';
-            return;
+        if (!response.ok) {
+            if (response.status === 401) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('사용자 정보를 가져오는 데 실패했습니다.');
         }
 
+        console.log('user 응답 받기 전'); // 디버깅
         const user = await response.json();
+        console.log('user 응답 받은 후'); // 디버깅
+
+        currentUserEmail = user.email;
         currentUserNickname = user.nickname;
         profileImage = user.profile_image;
 
-        // 프로필 이미지 설정 및 이벤트 리스너 추가
+        console.log('user:', user); // debug
+
+
+        // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
-        boardProfileImage.src = profile_image;
+        boardProfileImage.src = profileImage;
+        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });
     } catch (error) {
         console.error('사용자 정보를 불러오는 중 오류 발생:', error);
         alert('사용자 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.');
-        window.location.href = '/login';
+        window.location.href = '/board';
         return;
     }
 
@@ -83,17 +100,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Lottie 애니메이션 설정
-    const lottieContainer = document.getElementById('lottie-container');
-    const lottieAnimation = document.getElementById('lottie-animation');
-
     const animation = lottie.loadAnimation({
         container: lottieAnimation, // 애니메이션이 렌더링될 요소
         renderer: 'svg',
         loop: false,
         autoplay: false,
-        path: '../animations/animation.json', // 애니메이션 JSON 파일 경로
+        path: '/public/animations/animation1.json', // 애니메이션 JSON 파일 경로
     });
+
+    // animation.setSpeed(0.5); // 애니메이션 속도 설정
 
     // 게시글 작성 완료 버튼 클릭 이벤트
     boardWriteButton.addEventListener('click', async e => {
@@ -120,53 +135,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // 애니메이션 실행 및 컨테이너 표시
+        // Lottie 컨테이너와 메시지 표시
+        const feedbackMessage = document.createElement('div');
+        feedbackMessage.innerText = '게시글 등록 중...';
+        feedbackMessage.style.position = 'absolute';
+        feedbackMessage.style.color = 'black';
+        feedbackMessage.style.fontSize = '18px';
+        feedbackMessage.style.top = '70%';
+        feedbackMessage.style.left = '50%';
+        feedbackMessage.style.transform = 'translate(-50%, -50%)';
+        feedbackMessage.style.background = 'white';
+        lottieContainer.appendChild(feedbackMessage);
         lottieContainer.style.display = 'flex';
+        lottieContainer.style.background = 'none';
         animation.goToAndPlay(0, true);
 
         // 이미지 파일 처리
-        let imageBase64 = null;
-        if (imageFile) {
-            const reader = new FileReader();
-            reader.readAsDataURL(imageFile);
-            reader.onload = async () => {
-                imageBase64 = reader.result;
-
-                // 게시글 데이터 객체 생성
-                const postData = {
-                    title,
-                    content,
-                    image: imageBase64
-                };
-
-                // boardWrite Startpoint
-                const response = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(postData),
+        try {
+            // 이미지 파일 처리
+            let imageBase64 = null;
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.readAsDataURL(imageFile);
+                await new Promise(resolve => {
+                    reader.onload = function () {
+                        imageBase64 = reader.result;
+                        resolve();
+                    };
                 });
+            }
 
-                if (response.ok) {
-                    alert('게시글이 성공적으로 등록되었습니다.');
-                    window.location.href = '/board';
-                } else {
-                    const errorData = await response.json();
-                    alert(`게시글 등록 실패: ${errorData.message}`);
-                }
-            };
-            reader.onerror = error => {
-                console.error('이미지 파일 처리 중 오류 발생:', error);
-                alert('이미지 파일 처리 중 오류가 발생했습니다.');
-            };
-        } else {
-            // 이미지가 없는 경우 바로 데이터 전송
+            console.log('imageBase64:', imageBase64); // debug
+
             const postData = {
                 title,
                 content,
-                image: null,
+                image: imageBase64,
             };
+
+            console.log('postData:', postData); // debug
 
             const response = await fetch('/api/posts', {
                 method: 'POST',
@@ -178,17 +185,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (response.ok) {
-                alert('게시글이 성공적으로 등록되었습니다.');
-                window.location.href = '/board';
+                feedbackMessage.innerText = '게시글 등록 완료!';
+                animation.addEventListener('complete', () => {
+                    setTimeout(() => {
+                        lottieContainer.style.display = 'none';
+                        window.location.href = '/board';
+                    }, 0); // 애니메이션 완료 후 대기 원할 경우 숫자 변경
+                });
             } else {
                 const errorData = await response.json();
-                alert(`게시글 등록 실패: ${errorData.message}`);
+                feedbackMessage.innerText = `등록 실패: ${errorData.message}`;
+                console.error('등록 실패:', errorData);
             }
-
-            // 게시글 데이터 전송 중 애니메이션 완료 후 숨기기
-            setTimeout(() => {
-                lottieContainer.style.display = 'none';
-            }, 2000);
+        } catch (error) {
+            console.error('게시글 등록 중 오류 발생:', error);
+            feedbackMessage.innerText = '게시글 등록 중 오류가 발생했습니다.';
         }
     });
 });

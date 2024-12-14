@@ -51,7 +51,7 @@ function handleRegister() {
     const password = passwordInput.value.trim();
     const passwordAgain = passwordInputAgain.value.trim();
     const nickname = nicknameInput.value.trim();
-    const profileImage = profileImageInput.src;
+    const profile_image = profileImageInput.src;
 
     let isValid = true;
 
@@ -123,7 +123,7 @@ function handleRegister() {
             email,
             password,
             nickname,
-            profileImage, // 프로필 이미지 URL
+            profile_image, // 프로필 이미지 URL
         }),
     })
         .then(response => response.json())
@@ -148,7 +148,7 @@ function handleRegister() {
         });
 }
 
-// handleProfileImage function
+// ImagePreview function
 function handleImagePreview(event) {
     const file = event.target.files[0];
     const previewImage = document.getElementById('previewImage');

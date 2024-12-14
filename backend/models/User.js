@@ -89,6 +89,12 @@ const User = {
 
         return user;
     },
+
+    updatePassword: async (id, hashed_password) => {
+        const id_buffer = uuidToBuffer(id);
+        const sql = 'UPDATE users SET password_hash = ? WHERE id = ? AND deleted_at IS NULL';
+        await pool.query(sql, [hashed_password, id_buffer]);
+    },
 };
 
 export default User;

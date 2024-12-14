@@ -2,6 +2,11 @@
 
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function saveBase64Image(base64Image, filename) {
     // Base64 문자열에서 데이터 부분만 추출
@@ -11,6 +16,7 @@ export function saveBase64Image(base64Image, filename) {
     }
 
     const mimeType = matches[1];
+    console.log('MIME 타입:', mimeType); // 디버깅
     const imageBuffer = Buffer.from(matches[2], 'base64');
 
     // 파일 저장 경로 설정

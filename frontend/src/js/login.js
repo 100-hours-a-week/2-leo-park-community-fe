@@ -22,7 +22,6 @@ function handleLogin() {
     const passwordInput = document.getElementById('loginPassword');
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
-
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
     let isValid = true;

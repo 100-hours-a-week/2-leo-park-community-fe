@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
-        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
+        // boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });
@@ -116,8 +116,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // boardDetail likes Startpoint
     likeButton.addEventListener('click', async () => {
         try {
-            await fetch(`/api/posts/${postId}/likes`, { method: 'POST' });
-            selectedPost.likes += 1;
+            const response = await fetch(`/api/posts/${postId}/likes`, { method: 'POST' });
+            if (!response.ok) {
+                throw new Error('좋아요 토글 실패');
+            }
+
+            const result = await response.json();
+            // result.likes에는 서버가 최신 likes 수를 반환한다고 가정
+            selectedPost.likes = result.likes;
             document.getElementById('likeCount').innerText = selectedPost.likes;
         } catch (error) {
             console.error(error);
@@ -135,25 +141,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const newComment = {
-            content: commentContent,
-            date: formatDate(),
-        };
-
         try {
             const response = await fetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(newComment),
+                body: JSON.stringify({ content: commentContent }),
             });
+
             if (!response.ok) {
                 throw new Error('댓글 추가에 실패했습니다.');
             }
-            const addedComment = await response.json();
+
+            const { comment: addedComment } = await response.json();
+            console.log('addedComment:', addedComment);
+
+            // 댓글 배열에 새 댓글 추가
             selectedPost.comments.push(addedComment);
+
+            // 댓글 입력창 초기화
             document.getElementById('commentContent').value = '';
-            renderComments(selectedPost.comments);
+
+            // 댓글 재렌더링
+            renderComments(selectedPost.comments, currentUserNickname);
         } catch (error) {
             console.error(error);
             alert('댓글 추가 중 오류가 발생했습니다.');
@@ -213,39 +223,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     // boardDetail comments edit Startpoint
     // TODO: 댓글 수정 시 프롬프트 입력이 아닌 댓글 입력창을 통해 수정할 수 있도록 하는 인터페이스 추가
     // TODO: 댓글 삭제 시 삭제 확인 모달창을 통해 사용자가 확인할 수 있도록 하는 인터페이스 추가
-    window.editComment = async commentId => {
-        const comment = selectedPost.comments.find(
-            comment => comment.id === commentId,
-        );
+    window.editComment = async (commentId) => {
+        const comment = selectedPost.comments.find(comment => comment.id === commentId);
         if (!comment) {
             alert('댓글을 찾을 수 없습니다.');
             return;
         }
 
         const newContent = prompt('댓글을 수정하세요:', comment.content);
-        if (newContent === null || newContent.trim() === '') {
+        if (!newContent || newContent.trim() === '') {
             alert('댓글 내용은 필수입니다.');
             return;
         }
 
         try {
-            const response = await fetch(
-                `/api/posts/${postId}/comments/${commentId}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ content: newContent }),
-                },
-            );
+            const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ content: newContent }),
+            });
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || '댓글 수정에 실패했습니다.');
             }
-            const updatedComment = await response.json();
-            comment.content = updatedComment.content;
+
+            const { comment: updatedComment } = await response.json();
+            console.log('updatedComment:', updatedComment);
+
+            // 수정된 댓글 배열 업데이트
+            const commentIndex = selectedPost.comments.findIndex(c => c.id === commentId);
+            if (commentIndex !== -1) {
+                selectedPost.comments[commentIndex] = updatedComment;
+            }
+
+            console.log('수정 후 댓글 배열:', selectedPost.comments);
+
+            // 댓글 재렌더링
             renderComments(selectedPost.comments, currentUserNickname);
         } catch (error) {
             console.error(error);
@@ -261,8 +276,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 function displayPost(post, currentUserNickname) {
     document.getElementById('postTitle').innerText = post.title;
     document.getElementById('postAuthor').innerText = `작성자: ${post.author}`;
-    document.getElementById('postDate').innerText = `작성일: ${post.updated_at}`;
-    document.getElementById('postContent').innerHTML = post.content;
+    document.getElementById('postDate').innerText = `작성일: ${formatDate(post.updated_at)}`;
+    //document.getElementById('postContent').innerHTML = post.content;
+    const postContentElement = document.getElementById('postContent');
+    // innerHTML 대신 textContent 사용
+    postContentElement.textContent = post.content; 
     document.getElementById('likeCount').innerText = post.likes;
     document.getElementById('commentsCount').innerText = post.comments.length;
     document.getElementById('viewsCount').innerText = post.views;
@@ -289,6 +307,7 @@ function displayPost(post, currentUserNickname) {
 
 // 댓글 렌더링 함수 (Document Fragment 사용)
 function renderComments(comments, currentUserNickname) {
+    console.log('랜더링할 댓글:', comments); // debug
     const commentsList = document.getElementById('commentsList');
     commentsList.innerHTML = '';
 
@@ -313,7 +332,7 @@ function renderComments(comments, currentUserNickname) {
         authorSpan.textContent = comment.author;
 
         const dateSpan = document.createElement('span');
-        dateSpan.textContent = comment.updated_at;
+        dateSpan.textContent = formatDate(comment.updated_at);
 
         metaLeft.appendChild(authorSpan);
         metaLeft.appendChild(dateSpan);

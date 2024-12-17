@@ -58,7 +58,7 @@ router.delete('/posts/:id', postController.deletePost);
 router.post('/posts/:id/views', postController.incrementPostViews);
 
 // 게시글 좋아요 증가
-router.post('/posts/:id/likes', postController.incrementPostLikes);
+router.post('/posts/:id/likes', postController.togglePostLikes);
 
 // 댓글 추가
 router.post('/posts/:id/comments', postController.createComment);

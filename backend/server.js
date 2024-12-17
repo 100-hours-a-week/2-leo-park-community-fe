@@ -60,7 +60,7 @@ const startServer = async () => {
       await runMigrations();
   
       // 시드 실행
-      await runSeeds();
+      // await runSeeds();
   
       const port = process.env.PORT || 3000;
       app.listen(port, () => {

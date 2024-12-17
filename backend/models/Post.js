@@ -3,7 +3,6 @@
 import pool from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { uuidToBuffer, bufferToUuid } from '../utils/uuidUtils.js';
-import { formatDate } from '../utils/dateFormatter.js';
 
 const Post = {
     // 모든 게시글 목록 조회
@@ -13,7 +12,7 @@ const Post = {
             FROM posts
             JOIN users ON posts.user_id = users.id
             WHERE posts.deleted_at IS NULL
-            ORDER BY posts.created_at DESC
+            ORDER BY posts.updated_at DESC
         `);
         return rows.map(post => ({
             ...post,
@@ -85,12 +84,10 @@ const Post = {
             fields.push('image = ?');
             values.push(data.image);
         }
-        if (fields.length === 0) return;
 
-        // updated_at은 ON UPDATE CURRENT_TIMESTAMP로 자동 변경되지만
-        // 필요하다면 수동 업데이트 가능
-        // fields.push('updated_at = ?');
-        // values.push(formatDate());
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+
+        if (fields.length === 0) return;
 
         const sql = `UPDATE posts SET ${fields.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
         values.push(idBuffer);
@@ -101,8 +98,8 @@ const Post = {
     // 게시글 삭제 (논리 삭제)
     deletePost: async (id) => {
         const idBuffer = uuidToBuffer(id);
-        const sql = 'UPDATE posts SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL';
-        await pool.query(sql, [formatDate(), idBuffer]);
+        const sql = 'UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL';
+        await pool.query(sql, [idBuffer]);
     },
 
     // 게시글 작성자 확인
@@ -121,7 +118,7 @@ const Post = {
             await connection.beginTransaction();
 
             // 조회수 증가 (논리 삭제된 게시글에는 영향 없음)
-            await connection.query('UPDATE posts SET views = views + 1 WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
+            await connection.query('UPDATE posts SET views = views + 1, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
 
             const [rows] = await connection.query('SELECT views FROM posts WHERE id = ?', [idBuffer]);
 
@@ -135,19 +132,37 @@ const Post = {
         }
     },
 
-    // 게시글 좋아요 증가
-    incrementPostLikes: async (id) => {
-        const idBuffer = uuidToBuffer(id);
+    // 게시글 좋아요 증감
+    togglePostLikes: async (postId, userId) => {
+        const postIdBuffer = uuidToBuffer(postId);
+        const userIdBuffer = uuidToBuffer(userId);
+
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
 
-            await connection.query('UPDATE posts SET likes = likes + 1 WHERE id = ? AND deleted_at IS NULL', [idBuffer]);
+            // 좋아요 여부 확인
+            const [rows] = await connection.query(
+                'SELECT 1 FROM post_likes WHERE user_id = ? AND post_id = ?',
+                [userIdBuffer, postIdBuffer]
+            );
 
-            const [rows] = await connection.query('SELECT likes FROM posts WHERE id = ?', [idBuffer]);
+            let likes;
+            if (rows.length > 0) {
+                // 이미 좋아요 상태 -> 좋아요 취소
+                await connection.query('DELETE FROM post_likes WHERE user_id = ? AND post_id = ?', [userIdBuffer, postIdBuffer]);
+                await connection.query('UPDATE posts SET likes = likes - 1, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL', [postIdBuffer]);
+            } else {
+                // 좋아요 추가
+                await connection.query('INSERT INTO post_likes (user_id, post_id) VALUES (?, ?)', [userIdBuffer, postIdBuffer]);
+                await connection.query('UPDATE posts SET likes = likes + 1, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL', [postIdBuffer]);
+            }
+
+            const [likeRows] = await connection.query('SELECT likes FROM posts WHERE id = ?', [postIdBuffer]);
+            likes = likeRows[0].likes;
 
             await connection.commit();
-            return rows[0].likes;
+            return likes;
         } catch (error) {
             await connection.rollback();
             throw error;

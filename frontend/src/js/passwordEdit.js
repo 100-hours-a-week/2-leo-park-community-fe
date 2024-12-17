@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nicknameEditButton = document.getElementById('nicknameEditButton');
     const passwordEditButton = document.getElementById('passwordEditButton');
     const logoutButton = document.getElementById('logoutButton');
+    const backButton = document.getElementById('backButton');
     const editedPasswordInput = document.getElementById('editedPassword');
     const editedPasswordAgainInput = document.getElementById('editedPasswordAgain');
     const editDoneButton = document.getElementById('editDoneButton');
@@ -26,6 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     logoutButton.addEventListener('click', e => {
         e.preventDefault();
         logout();
+    });
+
+    backButton.addEventListener('click', e => {
+        e.preventDefault();
+        window.location.href = '/board';
     });
 
     let currentUserEmail;
@@ -58,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
-        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
+        // boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });

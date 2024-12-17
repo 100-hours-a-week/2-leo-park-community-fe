@@ -159,7 +159,9 @@ export const register = async (req, res) => {
     if (profile_image) {
       try {
         const filename = `profile_${Date.now()}.png`;
+        console.log('profile_image_url 추출 전'); // 디버깅
         profile_image_url = saveBase64Image(profile_image, filename);
+        console.log('profile_image_url:', profile_image_url); // 디버깅
       } catch (error) {
         console.error('프로필 이미지 저장 중 오류 발생:', error);
         return res.status(500).json({ error: '프로필 이미지 저장 중 오류가 발생했습니다.' });

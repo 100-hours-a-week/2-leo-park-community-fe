@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 프로필 이미지에 드롭다운 옵션 추가
         const boardProfileImage = document.getElementById('boardProfileImage');
         boardProfileImage.src = profileImage;
-        boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
+        // boardProfileImage.replaceWith(boardProfileImage.cloneNode(true));
         boardProfileImage.addEventListener('click', (event) => {
             dropdownOptions(event, '#boardProfileImage', '#profileOptions');
         });

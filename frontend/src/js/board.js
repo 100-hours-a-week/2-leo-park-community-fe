@@ -128,7 +128,9 @@ async function loadPosts() {
 
             const postDate = document.createElement('div');
             postDate.classList.add('post-date');
+            // console.log('post.updated_at (raw):', post.updated_at); // debug
             postDate.textContent = formatDate(post.updated_at);
+            // console.log('post.updated_at (formatted):', formatDate(post.updated_at)); // debug
 
             metaDateContainer.appendChild(postMeta);
             metaDateContainer.appendChild(postDate);

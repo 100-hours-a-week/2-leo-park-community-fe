@@ -1,5 +1,8 @@
 -- backend/database/seeds/seed_comments.sql
 
+-- 세션 타임존 설정
+SET time_zone = 'Asia/Seoul';
+
 -- FOREIGN KEY 비활성화
 SET FOREIGN_KEY_CHECKS = 0;
 

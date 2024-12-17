@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const backButton = document.getElementById('backButton');
     const imagePreview = document.getElementById('imagePreview');
     const registerProfileImage = document.getElementById('registerprofileImage');
-    const previewImage = document.getElementById('previewImage');
-
+    const previewImage = document.getElementById('previewImage'); // 프로필 사진
+    
     registerButton.addEventListener('click', e => {
         e.preventDefault();
         handleRegister();
@@ -35,12 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-function handleRegister() {
+async function handleRegister() {
     const emailInput = document.getElementById('registerUsername'); // 이메일
     const passwordInput = document.getElementById('registerPassword'); // 비밀번호
     const passwordInputAgain = document.getElementById('registerPasswordagain'); // 비밀번호 확인
     const nicknameInput = document.getElementById('registerNickname'); // 닉네임
-    const profileImageInput = document.getElementById('previewImage'); // 프로필 사진
+    const previewImage = document.getElementById('previewImage'); // 프로필 사진
 
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
@@ -51,7 +51,6 @@ function handleRegister() {
     const password = passwordInput.value.trim();
     const passwordAgain = passwordInputAgain.value.trim();
     const nickname = nicknameInput.value.trim();
-    const profile_image = profileImageInput.src;
 
     let isValid = true;
 
@@ -113,45 +112,54 @@ function handleRegister() {
 
     if (!isValid) return;
 
+    // 프로필 이미지 Base64 데이터 여부 확인
+    // 이미지가 선택되었고 previewImage.src가 data:image/... 형식을 가질 때만 profile_image 전송
+    let profile_image = null;
+    if (previewImage.src && previewImage.src.startsWith('data:image/')) {
+        profile_image = previewImage.src;
+    }
+
+    const requestData = {
+        email,
+        password,
+        nickname,
+        // 프로필 이미지를 선택하지 않은 경우 profile_image 필드 전송 안 함
+        ...(profile_image ? { profile_image } : {})
+    };
+
     // register Startpoint
-    fetch('/api/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email,
-            password,
-            nickname,
-            profile_image, // 프로필 이미지 URL
-        }),
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (result.error) {
-                // 서버에서 온 에러 처리
-                if (result.errorField === 'email') {
-                    emailError.textContent = result.message;
-                } else if (result.errorField === 'nickname') {
-                    nicknameError.textContent = result.message;
-                } else {
-                    alert(`오류 발생: ${result.message}`);
-                }
-            } else {
-                alert('회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.');
-                window.location.href = '/login'; // 로그인 페이지로 이동
-            }
-        })
-        .catch(error => {
-            console.error('회원가입 요청 중 오류 발생:', error);
-            alert('회원가입 중 문제가 발생했습니다. 다시 시도해주세요.');
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData),
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            // 서버에서 온 에러 처리
+            if (result.errorField === 'email') {
+                emailError.textContent = result.message;
+            } else if (result.errorField === 'nickname') {
+                nicknameError.textContent = result.message;
+            } else {
+                alert(`오류 발생: ${result.message}`);
+            }
+        } else {
+            // 회원가입 성공
+            alert('회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.');
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('회원가입 요청 중 오류 발생:', error);
+        alert('회원가입 중 문제가 발생했습니다. 다시 시도해주세요.');
+    }
 }
 
 // ImagePreview function
-function handleImagePreview(event) {
+function handleImagePreview(event, previewImage) {
     const file = event.target.files[0];
-    const previewImage = document.getElementById('previewImage');
 
     if (file) {
         const reader = new FileReader();
@@ -159,8 +167,14 @@ function handleImagePreview(event) {
             previewImage.style.display = 'block';
             previewImage.src = e.target.result;
         };
+        reader.onerror = () => {
+            console.error('이미지 로딩 중 오류 발생');
+            previewImage.style.display = 'none';
+            previewImage.src = '';
+        };
         reader.readAsDataURL(file);
     } else {
+        // 이미지가 선택되지 않은 경우
         previewImage.style.display = 'none';
         previewImage.src = '';
     }

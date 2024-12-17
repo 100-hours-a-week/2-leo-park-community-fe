@@ -664,6 +664,10 @@ textarea {
     font-weight: bold;
 }
 
+#postContent {
+    white-space: pre-wrap;
+}
+
 .boardDetail-info {
     display: flex;
     justify-content: space-between;

@@ -30,6 +30,7 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0,
     multipleStatements: true,
+    timezone: 'Asia/Seoul',
 });
 
 // SQL 로그 출력 함수

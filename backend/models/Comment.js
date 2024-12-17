@@ -16,7 +16,7 @@ const Comment = {
             FROM comments
             JOIN users ON comments.user_id = users.id
             WHERE comments.post_id = ? AND comments.deleted_at IS NULL
-            ORDER BY comments.created_at ASC
+            ORDER BY comments.updated_at ASC
             `,
             [uuidToBuffer(post_id)],
         );
@@ -41,24 +41,39 @@ const Comment = {
             const postIdBuffer = uuidToBuffer(post_id);
 
             await connection.query(
-                'INSERT INTO comments (id, content, user_id, post_id, created_at) VALUES (?, ?, ?, ?, ?)',
-                [id, content, userIdBuffer, postIdBuffer, created_at]
+                'INSERT INTO comments (id, content, user_id, post_id, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                [id, content, userIdBuffer, postIdBuffer]
             );
 
             // comment_count 증가
             await connection.query(
-                'UPDATE posts SET comment_count = comment_count + 1 WHERE id = ? AND deleted_at IS NULL',
+                'UPDATE posts SET comment_count = comment_count + 1, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL',
                 [postIdBuffer]
             );
 
             await connection.commit();
 
+            // 삽입된 댓글을 author 포함하여 가져오기
+            const [rows] = await connection.query(`
+            SELECT comments.*, users.nickname AS author
+            FROM comments
+            JOIN users ON comments.user_id = users.id
+            WHERE comments.id = ? AND comments.deleted_at IS NULL
+            `,
+                [id]
+            );
+
+            if (rows.length === 0) throw new Error('새로 생성된 댓글을 찾을 수 없습니다.');
+
+            const row = rows[0];
+
             return {
-                id: bufferToUuid(id),
-                content,
-                user_id,
-                post_id,
-                created_at,
+                ...row,
+                id: bufferToUuid(row.id),
+                user_id: bufferToUuid(row.user_id),
+                post_id: bufferToUuid(row.post_id),
+                created_at: row.created_at,
+                updated_at: row.updated_at,
             };
         } catch (error) {
             await connection.rollback();
@@ -79,12 +94,12 @@ const Comment = {
             const postIdBuffer = uuidToBuffer(post_id);
 
             // 실제 DELETE 대신 논리 삭제
-            await connection.query('UPDATE comments SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL',
-                [formatDate(), commentIdBuffer]);
+            await connection.query('UPDATE comments SET deleted_at = CURRENT_TIMESTAMP, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL',
+                [commentIdBuffer]);
 
             // comment_count 감소
             await connection.query(
-                'UPDATE posts SET comment_count = comment_count - 1 WHERE id = ? AND deleted_at IS NULL',
+                'UPDATE posts SET comment_count = comment_count - 1, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL',
                 [postIdBuffer]
             );
 
@@ -105,13 +120,30 @@ const Comment = {
         const idBuffer = uuidToBuffer(comment_id);
 
         await pool.query(
-            'UPDATE comments SET content = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
-            [content, formatDate(), idBuffer],
+            'UPDATE comments SET content = ?, updated_at = updated_at WHERE id = ? AND deleted_at IS NULL',
+            [content, idBuffer],
         );
 
+        // 수정된 댓글을 author 포함하여 가져오기
+        const [rows] = await pool.query(`
+        SELECT comments.*, users.nickname AS author
+        FROM comments
+        JOIN users ON comments.user_id = users.id
+        WHERE comments.id = ? AND comments.deleted_at IS NULL
+        `,
+            [idBuffer],
+        );
+
+        if (rows.length === 0) throw new Error('수정된 댓글을 찾을 수 없습니다.');
+
+        const row = rows[0];
         return {
-            id: comment_id,
-            content,
+            ...row,
+            id: bufferToUuid(row.id),
+            user_id: bufferToUuid(row.user_id),
+            post_id: bufferToUuid(row.post_id),
+            created_at: row.created_at,
+            updated_at: row.updated_at,
         };
     },
 
@@ -120,7 +152,12 @@ const Comment = {
         const idBuffer = uuidToBuffer(comment_id);
 
         const [rows] = await pool.query(
-            'SELECT * FROM comments WHERE id = ? AND deleted_at IS NULL',
+            `
+            SELECT comments.*, users.nickname AS author
+            FROM comments
+            JOIN users ON comments.user_id = users.id
+            WHERE comments.id = ? AND comments.deleted_at IS NULL
+            `,
             [idBuffer],
         );
 

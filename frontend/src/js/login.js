@@ -86,7 +86,7 @@ function handleLogin() {
                 }
             } else {
                 // 로그인 성공 처리
-                alert('환영합니다! 게시판으로 이동합니다.');
+                alert('WELCOME to 🌴 Palm Tree World! 🌴');
                 window.location.href = '/board'; // 게시글 목록조회 페이지로 이동
             }
         })

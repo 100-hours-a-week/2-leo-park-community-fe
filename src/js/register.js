@@ -1,5 +1,7 @@
 // /src/js/register.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('loginButton');
     const registerButton = document.getElementById('registerButton');
@@ -129,7 +131,7 @@ async function handleRegister() {
 
     // register Startpoint
     try {
-        const response = await fetch('/api/register', {
+        const response = await fetch(`${API_URL}/api/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData),

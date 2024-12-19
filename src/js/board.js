@@ -1,5 +1,7 @@
 // frontend/src/js/board.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 import { formatDate } from '../../utils/dateFormatter.js';
 import { dropdownOptions } from '../../utils/dropDown.js';
 import { logout } from '../../utils/logout.js';
@@ -32,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 게시글 목록조회 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${API_URL}/api/user/profile`, {
             method: 'GET',
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
@@ -71,7 +73,7 @@ async function loadPosts() {
 
     try {
         // board Startpoint
-        const response = await fetch('/api/posts');
+        const response = await fetch(`${API_URL}/api/posts`);
         console.log('응답 상태:', response.status); // debug
         if (!response.ok) {
             throw new Error('게시글 데이터를 불러오지 못했습니다.');

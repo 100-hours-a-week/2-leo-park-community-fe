@@ -1,5 +1,7 @@
 // /src/js/passwordEdit.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 import { dropdownOptions } from '../../utils/dropDown.js';
 import { logout } from '../../utils/logout.js';
 
@@ -40,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 회원정보수정(닉네임) 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${API_URL}/api/user/profile`, {
             method: 'GET',
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
@@ -117,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 비밀번호 업데이트 요청
         try {
-            const response = await fetch('/api/users/password', {
+            const response = await fetch(`${API_URL}/api/users/password`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

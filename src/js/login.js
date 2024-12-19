@@ -1,5 +1,7 @@
 // /src/js/login.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('loginButton');
     const registerButton = document.getElementById('registerButton');
@@ -63,7 +65,7 @@ function handleLogin() {
     if (!isValid) return;
 
     // login Startpoint
-    fetch('/api/login', {
+    fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

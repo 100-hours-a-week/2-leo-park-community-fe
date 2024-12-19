@@ -1,5 +1,7 @@
 // /src/js/boardDetail.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 import { dropdownOptions } from '../../utils/dropDown.js';
 import { logout } from '../../utils/logout.js';
 import { formatDate } from '../../utils/dateFormatter.js';
@@ -45,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 게시글 상세조회 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${API_URL}/api/user/profile`, {
             method: 'GET',
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // boardDetail Startpoint
     try {
-        const response = await fetch(`/api/posts/${postId}`, {
+        const response = await fetch(`${API_URL}/api/posts/${postId}`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -104,7 +106,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('selectedPost:', selectedPost); // debug
 
         // boardDetail views Startpoint
-        await fetch(`/api/posts/${postId}/views`, { method: 'POST' });
+        await fetch(`${API_URL}/api/posts/${postId}/views`, {
+            method: 'POST',
+            credentials: 'include',
+        });
 
         // 게시글 정보 표시
         displayPost(selectedPost, currentUserNickname);
@@ -116,7 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // boardDetail likes Startpoint
     likeButton.addEventListener('click', async () => {
         try {
-            const response = await fetch(`/api/posts/${postId}/likes`, { method: 'POST' });
+            const response = await fetch(`${API_URL}/api/posts/${postId}/likes`, {
+                method: 'POST',
+                credentials: 'include',
+            });
             if (!response.ok) {
                 throw new Error('좋아요 토글 실패');
             }
@@ -142,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const response = await fetch(`/api/posts/${postId}/comments`, {
+            const response = await fetch(`${API_URL}/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -177,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     boardDeleteButton.addEventListener('click', async () => {
         if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
             try {
-                const response = await fetch(`/api/posts/${postId}`, {
+                const response = await fetch(`${API_URL}/api/posts/${postId}`, {
                     method: 'DELETE',
                     credentials: 'include',
                 });
@@ -199,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (confirm('댓글을 삭제하시겠습니까?')) {
             try {
                 const response = await fetch(
-                    `/api/posts/${postId}/comments/${commentId}`,
+                    `${API_URL}/api/posts/${postId}/comments/${commentId}`,
                     {
                         method: 'DELETE',
                         credentials: 'include',
@@ -237,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
+            const response = await fetch(`${API_URL}/api/posts/${postId}/comments/${commentId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -280,7 +288,7 @@ function displayPost(post, currentUserNickname) {
     //document.getElementById('postContent').innerHTML = post.content;
     const postContentElement = document.getElementById('postContent');
     // innerHTML 대신 textContent 사용
-    postContentElement.textContent = post.content; 
+    postContentElement.textContent = post.content;
     document.getElementById('likeCount').innerText = post.likes;
     document.getElementById('commentsCount').innerText = post.comments.length;
     document.getElementById('viewsCount').innerText = post.views;

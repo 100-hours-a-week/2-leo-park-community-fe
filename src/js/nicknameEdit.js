@@ -1,5 +1,7 @@
 // /src/js/nicknameEdit.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 import { dropdownOptions } from '../../utils/dropDown.js';
 import { logout } from '../../utils/logout.js';
 import { signout } from '../../utils/signout.js';
@@ -49,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 회원정보수정(닉네임) 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${API_URL}/api/user/profile`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -133,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     async function updateAccount(data) {
-        const response = await fetch(`/api/users/account`, {
+        const response = await fetch(`${API_URL}/api/users/account`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

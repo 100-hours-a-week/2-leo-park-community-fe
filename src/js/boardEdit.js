@@ -1,5 +1,7 @@
 // /src/js/boardEdit.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 import { dropdownOptions } from '../../utils/dropDown.js';
 import { logout } from '../../utils/logout.js';
 
@@ -35,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 게시글 수정 페이지 로드 시 서버로부터 사용자 정보 인가(login Success Startpoint)
     try {
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${API_URL}/api/user/profile`, {
             method: 'GET',
             credentials: 'include', // 세션 쿠키를 포함하여 전송
         });
@@ -88,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // boardEdit Startpoint
     try {
-        const response = await fetch(`/api/posts/${postId}`, {
+        const response = await fetch(`${API_URL}/api/posts/${postId}`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -173,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // 백엔드로 데이터 전송
                 try {
-                    const response = await fetch(`/api/posts/${postId}`, {
+                    const response = await fetch(`${API_URL}/api/posts/${postId}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -205,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 백엔드로 데이터 전송
             try {
-                const response = await fetch(`/api/posts/${postId}`, {
+                const response = await fetch(`${API_URL}/api/posts/${postId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

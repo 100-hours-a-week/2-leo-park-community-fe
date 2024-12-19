@@ -1,9 +1,11 @@
 // frontend/utils/signout.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 export async function signout() {
     if (confirm('정말로 계정을 삭제하시겠습니까?')) {
         try {
-            const response = await fetch('/api/users/delete', {
+            const response = await fetch(`${API_URL}/api/users/delete`, {
                 method: 'DELETE',
                 credentials: 'include',
             });

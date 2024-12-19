@@ -1,8 +1,10 @@
 // /frontend/utils/logout.js
 
+const API_URL = window.APP_CONFIG.API_URL;
+
 export async function logout() {
     try {
-        const response = await fetch('/api/logout', {
+        const response = await fetch(`${API_URL}/api/logout`, {
             method: 'POST',
             credentials: 'include',
         });
